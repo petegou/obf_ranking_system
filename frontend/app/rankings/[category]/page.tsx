@@ -1,0 +1,179 @@
+import Link from "next/link";
+import { getBaseUrl } from "@/lib/api";
+
+interface FundScore {
+  rank: number;
+  ticker: string;
+  name: string;
+  category: string;
+  total_gpa_score: number;
+  risk_score: number;
+  return_score: number;
+  market_cap_score: number;
+  turnover_score: number;
+}
+
+async function getRankings(category: string): Promise<FundScore[]> {
+  const res = await fetch(
+    `${getBaseUrl()}/api/rankings?category=${encodeURIComponent(category)}`,
+    { cache: "no-store" }
+  );
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.rankings ?? [];
+}
+
+function scoreColor(score: number): string {
+  if (score >= 70) return "#16a34a";
+  if (score >= 50) return "#ca8a04";
+  if (score >= 30) return "#ea580c";
+  return "#dc2626";
+}
+
+export default async function RankingsPage({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}) {
+  const { category: rawCategory } = await params;
+  const category = decodeURIComponent(rawCategory);
+  const rankings = await getRankings(category);
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="mb-6">
+        <Link
+          href="/"
+          className="text-sm font-medium no-underline hover:underline"
+          style={{ color: "var(--accent)" }}
+        >
+          &larr; All Categories
+        </Link>
+      </div>
+
+      <div className="mb-8">
+        <h1
+          className="text-3xl font-bold mb-1"
+          style={{ color: "var(--foreground)" }}
+        >
+          {category}
+        </h1>
+        <p style={{ color: "var(--text-muted)" }}>
+          {rankings.length} funds ranked by Oak Bridge multi-factor score
+        </p>
+      </div>
+
+      {rankings.length === 0 ? (
+        <div
+          className="text-center py-16 rounded-lg border"
+          style={{
+            backgroundColor: "var(--card-bg)",
+            borderColor: "var(--card-border)",
+            color: "var(--text-muted)",
+          }}
+        >
+          <p>No rankings available for this category.</p>
+        </div>
+      ) : (
+        <div
+          className="rounded-lg border overflow-hidden"
+          style={{
+            backgroundColor: "var(--card-bg)",
+            borderColor: "var(--card-border)",
+          }}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr
+                  style={{
+                    backgroundColor: "var(--accent-muted)",
+                    color: "var(--text-muted)",
+                  }}
+                >
+                  <th className="text-left px-4 py-3 font-semibold w-16">
+                    Rank
+                  </th>
+                  <th className="text-left px-4 py-3 font-semibold">Ticker</th>
+                  <th className="text-left px-4 py-3 font-semibold hidden md:table-cell">
+                    Name
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold">
+                    GPA Score
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold hidden sm:table-cell">
+                    Risk
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold hidden sm:table-cell">
+                    Return
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold hidden lg:table-cell">
+                    Mkt Cap
+                  </th>
+                  <th className="text-right px-4 py-3 font-semibold hidden lg:table-cell">
+                    Turnover
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {rankings.map((fund, i) => (
+                  <tr
+                    key={fund.ticker}
+                    className="transition-colors"
+                    style={{
+                      borderTop: "1px solid var(--card-border)",
+                      backgroundColor:
+                        i % 2 === 0 ? "transparent" : "var(--accent-muted)",
+                    }}
+                  >
+                    <td className="px-4 py-3 font-mono font-bold">
+                      {fund.rank}
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link
+                        href={`/fund/${encodeURIComponent(fund.ticker)}`}
+                        className="font-semibold no-underline hover:underline"
+                        style={{ color: "var(--accent)" }}
+                      >
+                        {fund.ticker}
+                      </Link>
+                    </td>
+                    <td
+                      className="px-4 py-3 hidden md:table-cell"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {fund.name}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono font-bold">
+                      <span style={{ color: scoreColor(fund.total_gpa_score) }}>
+                        {fund.total_gpa_score.toFixed(2)}
+                      </span>
+                    </td>
+                    <td
+                      className="px-4 py-3 text-right font-mono hidden sm:table-cell"
+                      style={{ color: scoreColor(fund.risk_score) }}
+                    >
+                      {fund.risk_score.toFixed(1)}
+                    </td>
+                    <td
+                      className="px-4 py-3 text-right font-mono hidden sm:table-cell"
+                      style={{ color: scoreColor(fund.return_score) }}
+                    >
+                      {fund.return_score.toFixed(1)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono hidden lg:table-cell">
+                      {fund.market_cap_score.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono hidden lg:table-cell">
+                      {fund.turnover_score.toFixed(2)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
