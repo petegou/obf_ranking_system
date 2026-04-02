@@ -229,12 +229,12 @@ export default function FormulasPage() {
     const parts = path.split(".");
     if (parts.length === 2) {
       const [group, key] = parts;
-      (next as Record<string, Record<string, number>>)[group] = {
-        ...(next as Record<string, Record<string, number>>)[group],
+      (next as unknown as Record<string, Record<string, number>>)[group] = {
+        ...(next as unknown as Record<string, Record<string, number>>)[group],
         [key]: value,
       };
     } else {
-      (next as Record<string, number>)[parts[0]] = value;
+      (next as unknown as Record<string, number>)[parts[0]] = value;
     }
     setConfig(next);
   };
