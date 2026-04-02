@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 interface ScoringConfig {
   blend_weight_3yr: number;
@@ -160,6 +161,7 @@ function WeightSlider({
 }
 
 export default function FormulasPage() {
+  const { isAdmin, loading: authLoading } = useAuth();
   const [config, setConfig] = useState<ScoringConfig | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -236,6 +238,48 @@ export default function FormulasPage() {
     }
     setConfig(next);
   };
+
+  if (authLoading) {
+    return (
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-5xl mx-auto px-6 py-10">
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="text-sm font-medium no-underline hover:underline"
+            style={{ color: "var(--accent)" }}
+          >
+            &larr; Home
+          </Link>
+        </div>
+        <div
+          className="rounded-lg border px-6 py-8 text-center"
+          style={{
+            backgroundColor: "var(--card-bg)",
+            borderColor: "var(--card-border)",
+          }}
+        >
+          <h2
+            className="text-xl font-semibold mb-2"
+            style={{ color: "var(--foreground)" }}
+          >
+            Access Denied
+          </h2>
+          <p style={{ color: "var(--text-muted)" }}>
+            You do not have permission to view this page. Only administrators can
+            modify scoring formulas.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!config) {
     return (
