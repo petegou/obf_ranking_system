@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { recalculateAllRankings } from "@/lib/scoring";
 
 export async function GET() {
@@ -21,6 +22,22 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const serverSupabase = await createSupabaseServerClient();
+  const { data: { user } } = await serverSupabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: roleData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (roleData?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await request.json();
 
   for (const [key, value] of Object.entries(body)) {

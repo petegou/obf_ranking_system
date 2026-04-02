@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { recalculateAllRankings } from "@/lib/scoring";
 
 const DEFAULTS: Record<string, string> = {
@@ -27,6 +28,22 @@ const DEFAULTS: Record<string, string> = {
 };
 
 export async function POST() {
+  const serverSupabase = await createSupabaseServerClient();
+  const { data: { user } } = await serverSupabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { data: roleData } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (roleData?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   for (const [key, value] of Object.entries(DEFAULTS)) {
     await supabase
       .from("scoring_config")
