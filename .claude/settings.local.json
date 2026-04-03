@@ -26,7 +26,16 @@
       "Bash(git -C /Users/PGoudeau3/Desktop/obf_ranking_system log --oneline -10)",
       "Bash(git submodule:*)",
       "Bash(git rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(find /Users/PGoudeau3/Desktop/obf_ranking_system/.claude/worktrees/agent-a2189980/frontend/node_modules/next/dist -name *.md -path */docs/*)",
+      "Bash(find /Users/PGoudeau3/Desktop/obf_ranking_system/.claude/worktrees/agent-a2189980/frontend/node_modules/next -name CHANGELOG* -maxdepth 1)",
+      "Bash(npx next:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git merge:*)",
+      "Bash(git checkout:*)",
+      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder SUPABASE_SERVICE_ROLE_KEY=placeholder npm run build)"
     ]
   }
 }
