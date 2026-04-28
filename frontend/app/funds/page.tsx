@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getAllRankings } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+
 function scoreColor(score: number): string {
   if (score >= 70) return "#16a34a";
   if (score >= 50) return "#ca8a04";

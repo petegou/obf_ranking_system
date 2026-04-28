@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getRankingsForCategory } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+
 async function getRankings(category: string) {
   const result = await getRankingsForCategory(category);
   return result.rankings;

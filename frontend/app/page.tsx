@@ -1,11 +1,10 @@
 import Link from "next/link";
-import { getCategories, getCategoryCounts } from "@/lib/queries";
+import { getCategoriesWithCounts } from "@/lib/queries";
+
+export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [categories, counts] = await Promise.all([
-    getCategories(),
-    getCategoryCounts(),
-  ]);
+  const categories = await getCategoriesWithCounts();
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-10">
@@ -49,8 +48,7 @@ export default async function HomePage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {categories.map((cat) => {
-            const fundCount = counts[cat] ?? 0;
+          {categories.map(({ category: cat, count: fundCount }) => {
             return (
               <Link
                 key={cat}

@@ -5,36 +5,33 @@ import {
   formatRankingSlim,
 } from "./rankings-utils";
 
-export async function getCategories(): Promise<string[]> {
+// Supabase JS defaults to a 1000-row range. Bump well above current dataset (~6.6k).
+const MAX_ROWS = 50000;
+
+/**
+ * Fetch categories and their fund counts for the given as-of date in a single
+ * query against the category_counts view. Returns categories sorted by name.
+ */
+export async function getCategoriesWithCounts(
+  asOfDate?: string | null
+): Promise<{ category: string; count: number }[]> {
+  const date = await resolveAsOfDate(asOfDate ?? null);
+  if (!date) return [];
+
   const { data, error } = await supabase
-    .from("funds")
-    .select("category")
+    .from("category_counts")
+    .select("category, fund_count")
+    .eq("as_of_date", date)
     .order("category");
   if (error) throw new Error(error.message);
-  return [...new Set((data ?? []).map((r) => r.category))];
+
+  return (data ?? []).map((r) => ({ category: r.category, count: r.fund_count }));
 }
 
-export async function getCategoryCounts(
-  asOfDate?: string | null
-): Promise<Record<string, number>> {
-  const date = await resolveAsOfDate(asOfDate ?? null);
-  if (!date) return {};
-
-  const { data, error } = await supabase
-    .from("fund_rankings")
-    .select(`ticker, funds!inner(category)`)
-    .eq("as_of_date", date);
-  if (error) throw new Error(error.message);
-
-  const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    const f = (row as { funds: unknown }).funds;
-    const fund = Array.isArray(f) ? f[0] : f;
-    const cat = (fund as { category?: string } | null)?.category;
-    if (!cat) continue;
-    counts[cat] = (counts[cat] ?? 0) + 1;
-  }
-  return counts;
+/** Distinct categories that have rankings, sorted by name. */
+export async function getCategories(asOfDate?: string | null): Promise<string[]> {
+  const rows = await getCategoriesWithCounts(asOfDate);
+  return rows.map((r) => r.category);
 }
 
 export async function getAllRankings(asOfDate?: string | null) {
@@ -50,7 +47,8 @@ export async function getAllRankings(asOfDate?: string | null) {
        funds!inner(name, category)`
     )
     .eq("as_of_date", date)
-    .order("total_gpa_score", { ascending: false });
+    .order("total_gpa_score", { ascending: false })
+    .limit(MAX_ROWS);
   if (error) throw new Error(error.message);
 
   return {
@@ -82,7 +80,8 @@ export async function getRankingsForCategory(
     )
     .eq("as_of_date", date)
     .eq("funds.category", category)
-    .order("category_rank", { ascending: true });
+    .order("category_rank", { ascending: true })
+    .limit(MAX_ROWS);
   if (error) throw new Error(error.message);
 
   return {

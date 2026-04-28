@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getFundDetail } from "@/lib/queries";
 
+export const dynamic = "force-dynamic";
+
 function ScoreBar({ label, value, max = 100 }: { label: string; value: number; max?: number }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
   let barColor = "#dc2626";
