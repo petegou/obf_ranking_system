@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { supabase as supabaseAdmin } from "@/lib/supabase";
 import { importCSV } from "@/lib/csv-import";
 import { recalculateAllRankings } from "@/lib/scoring";
 
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: roleData } = await serverSupabase
+  const { data: roleData } = await supabaseAdmin
     .from("user_roles")
     .select("role")
     .eq("id", user.id)

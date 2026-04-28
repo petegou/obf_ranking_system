@@ -17,7 +17,7 @@ export async function GET() {
   const { data: roleData } = await supabaseAdmin
     .from("user_roles")
     .select("role")
-    .eq("user_id", user.id)
+    .eq("id", user.id)
     .single();
 
   const role = roleData?.role ?? "viewer";
