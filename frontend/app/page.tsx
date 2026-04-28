@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getBaseUrl } from "@/lib/api";
 
+
 const CATEGORY_META: Record<string, { description: string; group: string }> = {
   "Large Cap Growth": {
     description: "High-growth large companies focused on capital appreciation",
