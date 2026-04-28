@@ -1,35 +1,5 @@
 import Link from "next/link";
-import { getBaseUrl } from "@/lib/api";
-
-interface BreakdownSection {
-  [key: string]: number;
-}
-
-interface FundDetail {
-  rank: number;
-  ticker: string;
-  name: string;
-  category: string;
-  total_gpa_score: number;
-  risk_score: number;
-  return_score: number;
-  market_cap_score: number;
-  turnover_score: number;
-  risk_breakdown: BreakdownSection;
-  return_breakdown: BreakdownSection;
-}
-
-async function getFundDetail(ticker: string): Promise<FundDetail | null> {
-  try {
-    const res = await fetch(`${getBaseUrl()}/api/fund/${encodeURIComponent(ticker)}`, {
-      cache: "no-store",
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
+import { getFundDetail } from "@/lib/queries";
 
 function ScoreBar({ label, value, max = 100 }: { label: string; value: number; max?: number }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));

@@ -27,59 +27,114 @@ export async function resolveAsOfDate(
 }
 
 type RawRanking = Record<string, unknown>;
-type FundJoin = { name: string; category: string } | null;
+type FundJoin = { name: string; category: string } | { name: string; category: string }[] | null;
+
+function pickFund(f: FundJoin): { name: string; category: string } | null {
+  if (!f) return null;
+  return Array.isArray(f) ? f[0] ?? null : f;
+}
+
+export interface RankingFull {
+  rank: number;
+  ticker: string;
+  name: string;
+  category: string;
+  as_of_date: string;
+  total_gpa_score: number;
+  risk_score: number;
+  return_score: number;
+  market_cap_score: number;
+  turnover_score: number;
+  risk_breakdown: {
+    beta: number;
+    r_squared: number;
+    up_capture: number;
+    down_capture: number;
+    sharpe: number;
+    tracking_error: number;
+    sortino: number;
+    treynor: number;
+    info_ratio: number;
+    kurtosis: number;
+    drawdown: number;
+    skewness: number;
+  };
+  return_breakdown: {
+    alpha: number;
+    yield: number;
+    relative_return: number;
+    price: number;
+    fee: number;
+  };
+}
+
+export interface RankingSlim {
+  rank: number;
+  ticker: string;
+  name: string;
+  category: string;
+  as_of_date: string;
+  total_gpa_score: number;
+  risk_score: number;
+  return_score: number;
+  market_cap_score: number;
+  turnover_score: number;
+}
+
+const num = (v: unknown): number => (typeof v === "number" ? v : 0);
+const str = (v: unknown): string => (typeof v === "string" ? v : "");
 
 /** Full ranking shape including risk/return breakdowns. */
-export function formatRanking(r: RawRanking) {
-  const fund = r.funds as FundJoin;
+export function formatRanking(r: RawRanking): RankingFull {
+  const fund = pickFund(r.funds as FundJoin);
   return {
-    rank:             r.category_rank,
-    ticker:           r.ticker,
+    rank:             num(r.category_rank),
+    ticker:           str(r.ticker),
     name:             fund?.name     ?? "",
     category:         fund?.category ?? "",
-    as_of_date:       r.as_of_date,
-    total_gpa_score:  r.total_gpa_score  ?? 0,
-    risk_score:       r.risk_score       ?? 0,
-    return_score:     r.return_score     ?? 0,
-    market_cap_score: r.market_cap_score ?? 0,
-    turnover_score:   r.turnover_score   ?? 0,
+    as_of_date:       str(r.as_of_date),
+    total_gpa_score:  num(r.total_gpa_score),
+    risk_score:       num(r.risk_score),
+    return_score:     num(r.return_score),
+    market_cap_score: num(r.market_cap_score),
+    turnover_score:   num(r.turnover_score),
     risk_breakdown: {
-      beta:           r.beta_score           ?? 0,
-      r_squared:      r.r_squared_score      ?? 0,
-      up_capture:     r.up_capture_score     ?? 0,
-      down_capture:   r.down_capture_score   ?? 0,
-      sharpe:         r.sharpe_score         ?? 0,
-      tracking_error: r.tracking_error_score ?? 0,
-      sortino:        r.sortino_score        ?? 0,
-      treynor:        r.treynor_score        ?? 0,
-      info_ratio:     r.info_ratio_score     ?? 0,
-      kurtosis:       r.kurtosis_score       ?? 0,
-      drawdown:       r.drawdown_score       ?? 0,
-      skewness:       r.skewness_score       ?? 0,
+      beta:           num(r.beta_score),
+      r_squared:      num(r.r_squared_score),
+      up_capture:     num(r.up_capture_score),
+      down_capture:   num(r.down_capture_score),
+      sharpe:         num(r.sharpe_score),
+      tracking_error: num(r.tracking_error_score),
+      sortino:        num(r.sortino_score),
+      treynor:        num(r.treynor_score),
+      info_ratio:     num(r.info_ratio_score),
+      kurtosis:       num(r.kurtosis_score),
+      drawdown:       num(r.drawdown_score),
+      skewness:       num(r.skewness_score),
     },
     return_breakdown: {
-      alpha:           r.alpha_comp_score           ?? 0,
-      yield:           r.yield_comp_score           ?? 0,
-      relative_return: r.relative_return_comp_score ?? 0,
-      price:           r.price_comp_score           ?? 0,
-      fee:             r.fee_comp_score             ?? 0,
+      alpha:           num(r.alpha_comp_score),
+      yield:           num(r.yield_comp_score),
+      relative_return: num(r.relative_return_comp_score),
+      price:           num(r.price_comp_score),
+      fee:             num(r.fee_comp_score),
     },
   };
 }
 
 /** Slim ranking shape (summary only, no sub-breakdowns). */
-export function formatRankingSlim(r: RawRanking) {
-  const fund = r.funds as FundJoin;
+export function formatRankingSlim(r: RawRanking): RankingSlim {
+  const fund = pickFund(r.funds as FundJoin);
   return {
-    rank:             r.category_rank,
-    ticker:           r.ticker,
+    rank:             num(r.category_rank),
+    ticker:           str(r.ticker),
     name:             fund?.name     ?? "",
     category:         fund?.category ?? "",
-    as_of_date:       r.as_of_date,
-    total_gpa_score:  r.total_gpa_score  ?? 0,
-    risk_score:       r.risk_score       ?? 0,
-    return_score:     r.return_score     ?? 0,
-    market_cap_score: r.market_cap_score ?? 0,
-    turnover_score:   r.turnover_score   ?? 0,
+    as_of_date:       str(r.as_of_date),
+    total_gpa_score:  num(r.total_gpa_score),
+    risk_score:       num(r.risk_score),
+    return_score:     num(r.return_score),
+    market_cap_score: num(r.market_cap_score),
+    turnover_score:   num(r.turnover_score),
   };
 }

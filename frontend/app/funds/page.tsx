@@ -1,27 +1,5 @@
 import Link from "next/link";
-import { getBaseUrl } from "@/lib/api";
-
-interface FundScore {
-  rank: number;
-  ticker: string;
-  name: string;
-  category: string;
-  total_gpa_score: number;
-  risk_score: number;
-  return_score: number;
-  market_cap_score: number;
-  turnover_score: number;
-}
-
-async function getAllRankings(): Promise<{ total: number; rankings: FundScore[] }> {
-  try {
-    const res = await fetch(`${getBaseUrl()}/api/rankings/all`, { cache: "no-store" });
-    if (!res.ok) return { total: 0, rankings: [] };
-    return await res.json();
-  } catch {
-    return { total: 0, rankings: [] };
-  }
-}
+import { getAllRankings } from "@/lib/queries";
 
 function scoreColor(score: number): string {
   if (score >= 70) return "#16a34a";

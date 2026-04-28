@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { getCategories } from "@/lib/queries";
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from("funds")
-    .select("category")
-    .order("category");
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const categories = [...new Set((data ?? []).map((r) => r.category))];
-  return NextResponse.json({ categories });
+  try {
+    const categories = await getCategories();
+    return NextResponse.json({ categories });
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "unknown" },
+      { status: 500 }
+    );
+  }
 }

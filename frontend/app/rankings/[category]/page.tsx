@@ -1,26 +1,9 @@
 import Link from "next/link";
-import { getBaseUrl } from "@/lib/api";
+import { getRankingsForCategory } from "@/lib/queries";
 
-interface FundScore {
-  rank: number;
-  ticker: string;
-  name: string;
-  category: string;
-  total_gpa_score: number;
-  risk_score: number;
-  return_score: number;
-  market_cap_score: number;
-  turnover_score: number;
-}
-
-async function getRankings(category: string): Promise<FundScore[]> {
-  const res = await fetch(
-    `${getBaseUrl()}/api/rankings?category=${encodeURIComponent(category)}`,
-    { cache: "no-store" }
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.rankings ?? [];
+async function getRankings(category: string) {
+  const result = await getRankingsForCategory(category);
+  return result.rankings;
 }
 
 function scoreColor(score: number): string {
