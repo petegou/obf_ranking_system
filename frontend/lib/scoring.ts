@@ -135,7 +135,19 @@ export async function loadConfig(): Promise<ScoringConfig> {
 
 // ---------- Main recalculation ----------
 
-export async function recalculateAllRankings(asOfDate: string): Promise<void> {
+export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
+  if (!asOfDate) {
+    const { data: dates } = await supabase
+      .from("fund_metrics")
+      .select("as_of_date")
+      .order("as_of_date");
+    const distinct = [...new Set((dates ?? []).map((r) => r.as_of_date))];
+    for (const date of distinct) {
+      await recalculateAllRankings(date);
+    }
+    return;
+  }
+
   const cfg = await loadConfig();
 
   // Get distinct categories for this date
@@ -147,7 +159,7 @@ export async function recalculateAllRankings(asOfDate: string): Promise<void> {
   const categories = [
     ...new Set(
       (metricRows ?? [])
-        .map((r) => (r.funds as { category: string } | null)?.category)
+        .map((r) => (r.funds as unknown as { category: string } | null)?.category)
         .filter(Boolean) as string[]
     ),
   ];
