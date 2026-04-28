@@ -1,56 +1,76 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
+import { resolveAsOfDate } from "@/lib/rankings-utils";
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ ticker: string }> }
 ) {
   const { ticker } = await params;
+  const dateParam  = request.nextUrl.searchParams.get("date");
 
-  const { data, error } = await supabase
-    .from("funds")
-    .select("*")
-    .ilike("ticker", ticker)
-    .limit(1)
-    .single();
-
-  if (error || !data) {
-    return NextResponse.json(
-      { error: `Fund '${ticker}' not found` },
-      { status: 404 }
-    );
+  const asOfDate = await resolveAsOfDate(dateParam, ticker);
+  if (!asOfDate) {
+    return NextResponse.json({ error: `Fund '${ticker}' not found` }, { status: 404 });
   }
 
+  const { data: fund, error: fundError } = await supabase
+    .from("funds")
+    .select("ticker, name, category")
+    .ilike("ticker", ticker)
+    .single();
+
+  if (fundError || !fund) {
+    return NextResponse.json({ error: `Fund '${ticker}' not found` }, { status: 404 });
+  }
+
+  const [{ data: ranking }, { data: metrics }] = await Promise.all([
+    supabase
+      .from("fund_rankings")
+      .select("*")
+      .eq("ticker", fund.ticker)
+      .eq("as_of_date", asOfDate)
+      .single(),
+    supabase
+      .from("fund_metrics")
+      .select("*")
+      .eq("ticker", fund.ticker)
+      .eq("as_of_date", asOfDate)
+      .single(),
+  ]);
+
   return NextResponse.json({
-    rank: data.category_rank,
-    ticker: data.ticker,
-    name: data.name,
-    category: data.category,
-    total_gpa_score: data.total_gpa_score ?? 0,
-    risk_score: data.risk_score ?? 0,
-    return_score: data.return_score ?? 0,
-    market_cap_score: data.market_cap_score ?? 0,
-    turnover_score: data.turnover_score ?? 0,
+    ticker:           fund.ticker,
+    name:             fund.name,
+    category:         fund.category,
+    as_of_date:       asOfDate,
+    rank:             ranking?.category_rank    ?? null,
+    total_gpa_score:  ranking?.total_gpa_score  ?? null,
+    risk_score:       ranking?.risk_score       ?? null,
+    return_score:     ranking?.return_score     ?? null,
+    market_cap_score: ranking?.market_cap_score ?? null,
+    turnover_score:   ranking?.turnover_score   ?? null,
     risk_breakdown: {
-      beta: data.beta_score ?? 0,
-      r_squared: data.r_squared_score ?? 0,
-      up_capture: data.up_capture_score ?? 0,
-      down_capture: data.down_capture_score ?? 0,
-      sharpe: data.sharpe_score ?? 0,
-      tracking_error: data.tracking_error_score ?? 0,
-      sortino: data.sortino_score ?? 0,
-      treynor: data.treynor_score ?? 0,
-      info_ratio: data.info_ratio_score ?? 0,
-      kurtosis: data.kurtosis_score ?? 0,
-      drawdown: data.drawdown_score ?? 0,
-      skewness: data.skewness_score ?? 0,
+      beta:           ranking?.beta_score           ?? null,
+      r_squared:      ranking?.r_squared_score      ?? null,
+      up_capture:     ranking?.up_capture_score     ?? null,
+      down_capture:   ranking?.down_capture_score   ?? null,
+      sharpe:         ranking?.sharpe_score         ?? null,
+      tracking_error: ranking?.tracking_error_score ?? null,
+      sortino:        ranking?.sortino_score        ?? null,
+      treynor:        ranking?.treynor_score        ?? null,
+      info_ratio:     ranking?.info_ratio_score     ?? null,
+      kurtosis:       ranking?.kurtosis_score       ?? null,
+      drawdown:       ranking?.drawdown_score       ?? null,
+      skewness:       ranking?.skewness_score       ?? null,
     },
     return_breakdown: {
-      alpha: data.alpha_comp_score ?? 0,
-      yield: data.yield_comp_score ?? 0,
-      relative_return: data.relative_return_comp_score ?? 0,
-      price: data.price_comp_score ?? 0,
-      fee: data.fee_comp_score ?? 0,
+      alpha:           ranking?.alpha_comp_score           ?? null,
+      yield:           ranking?.yield_comp_score           ?? null,
+      relative_return: ranking?.relative_return_comp_score ?? null,
+      price:           ranking?.price_comp_score           ?? null,
+      fee:             ranking?.fee_comp_score             ?? null,
     },
+    metrics: metrics ?? null,
   });
 }

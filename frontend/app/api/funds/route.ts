@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from("funds")
-    .select("ticker, name, category, aum, expense_ratio");
+    .select("ticker, name, category");
 
   if (category) {
     query = query.eq("category", category);
