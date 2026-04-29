@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-const MIN_PASSWORD_LEN = 12;
+const MIN_PASSWORD_LEN = 8;
 
 interface PasswordCheck {
   ok: boolean;
