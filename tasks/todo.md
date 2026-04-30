@@ -24,7 +24,7 @@
 
 ## Overview page
 - [x] Task 13 — Build `<KpiStrip>`
-- [ ] Task 14 — Build `<RiskReturnScatter>`
+- [x] Task 14 — Build `<RiskReturnScatter>`
 - [ ] Task 15 — Build `<HighestPerCategory>`
 
 ## Category workbench
