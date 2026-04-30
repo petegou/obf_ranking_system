@@ -1,13 +1,19 @@
+import { HighestPerCategory } from "@/components/overview/highest-per-category";
 import { KpiStrip } from "@/components/overview/kpi-strip";
 import { RiskReturnScatter } from "@/components/overview/risk-return-scatter";
-import { getAllFundsForScatter, getOverviewKpis } from "@/lib/queries";
+import {
+  getAllFundsForScatter,
+  getHighestPerCategory,
+  getOverviewKpis,
+} from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function OverviewPage() {
-  const [kpis, scatter] = await Promise.all([
+  const [kpis, scatter, highest] = await Promise.all([
     getOverviewKpis(),
     getAllFundsForScatter(),
+    getHighestPerCategory(),
   ]);
 
   return (
@@ -20,6 +26,7 @@ export default async function OverviewPage() {
       </header>
       <KpiStrip kpis={kpis} />
       <RiskReturnScatter rows={scatter} />
+      <HighestPerCategory rows={highest} />
     </div>
   );
 }

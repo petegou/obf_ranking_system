@@ -25,7 +25,7 @@
 ## Overview page
 - [x] Task 13 — Build `<KpiStrip>`
 - [x] Task 14 — Build `<RiskReturnScatter>`
-- [ ] Task 15 — Build `<HighestPerCategory>`
+- [x] Task 15 — Build `<HighestPerCategory>`
 
 ## Category workbench
 - [ ] Task 16 — Promote `<ScoreBar>` to shared component

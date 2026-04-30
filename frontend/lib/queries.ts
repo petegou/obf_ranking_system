@@ -354,3 +354,49 @@ export async function getFundPeerStats(
 
   return { ticker: fund.ticker, category: fund.category, metrics };
 }
+
+export interface HighestPerCategoryRow {
+  category: string;
+  ticker: string;
+  name: string;
+  totalGpaScore: number;
+}
+
+export async function getHighestPerCategory(): Promise<HighestPerCategoryRow[]> {
+  const date = await resolveAsOfDate(null);
+  if (!date) return [];
+
+  const { data, error } = await supabase
+    .from("fund_rankings")
+    .select(
+      `ticker,
+       category_rank,
+       total_gpa_score,
+       funds!inner(name, category)`
+    )
+    .eq("as_of_date", date)
+    .eq("category_rank", 1)
+    .limit(MAX_ROWS);
+  if (error) throw new Error(error.message);
+
+  type Row = {
+    ticker: string;
+    total_gpa_score: number | null;
+    funds: { name: string; category: string } | { name: string; category: string }[] | null;
+  };
+
+  return ((data as unknown as Row[] | null) ?? [])
+    .map((row) => {
+      const fund = Array.isArray(row.funds) ? row.funds[0] : row.funds;
+      if (!fund) return null;
+
+      return {
+        category: fund.category,
+        ticker: row.ticker,
+        name: fund.name,
+        totalGpaScore: row.total_gpa_score ?? 0,
+      };
+    })
+    .filter((row): row is HighestPerCategoryRow => row !== null)
+    .sort((a, b) => a.category.localeCompare(b.category));
+}
