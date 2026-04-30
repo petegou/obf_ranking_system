@@ -68,7 +68,7 @@ export default async function FundDetailPage({
     <div className="max-w-5xl mx-auto px-6 py-10">
       <div className="mb-6 flex items-center gap-3">
         <Link
-          href={`/rankings/${encodeURIComponent(fund.category)}`}
+          href={`/categories/${encodeURIComponent(fund.category)}`}
           className="text-sm font-medium no-underline hover:underline"
           style={{ color: "var(--accent)" }}
         >

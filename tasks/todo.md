@@ -14,7 +14,7 @@
 - [x] Task 5 — Build `<AppShell>` skeleton + `(workbench)/layout.tsx`
 - [x] Task 6 — Build full `<Sidebar>` with categories, analysis, admin sections
 - [x] Task 7 — Build `<TopBar>` with breadcrumb + search slot
-- [ ] Task 8 — Migrate existing pages into `(workbench)`; rename rankings→categories, fund→funds
+- [x] Task 8 — Migrate existing pages into `(workbench)`; rename rankings→categories, fund→funds
 - [ ] Task 9 — Wire up `<FundSearch>` typeahead + `/api/funds/search`
 
 ## Data helpers

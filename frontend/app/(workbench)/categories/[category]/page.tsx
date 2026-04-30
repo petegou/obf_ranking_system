@@ -110,7 +110,7 @@ export default async function RankingsPage({
                     </td>
                     <td className="px-4 py-3">
                       <Link
-                        href={`/fund/${encodeURIComponent(fund.ticker)}`}
+                        href={`/funds/${encodeURIComponent(fund.ticker)}`}
                         className="font-semibold no-underline hover:underline"
                         style={{ color: "var(--accent)" }}
                       >
