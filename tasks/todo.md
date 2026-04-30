@@ -38,7 +38,7 @@
 - [x] Task 21 — Add `/rankings`→`/categories` and `/fund`→`/funds` redirects
 
 ## Phase 2 placeholders
-- [ ] Task 22 — Build `<ComingSoonPanel>` and placeholder routes for compare/scatter/distribution
+- [x] Task 22 — Build `<ComingSoonPanel>` and placeholder routes for compare/scatter/distribution
 
 ## Loading + errors
 - [ ] Task 23 — Add `loading.tsx` and `error.tsx` for workbench routes
