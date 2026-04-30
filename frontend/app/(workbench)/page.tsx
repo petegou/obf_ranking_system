@@ -25,8 +25,14 @@ export default async function OverviewPage() {
         </p>
       </header>
       <KpiStrip kpis={kpis} />
-      <RiskReturnScatter rows={scatter} />
-      <HighestPerCategory rows={highest} />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-3">
+          <RiskReturnScatter rows={scatter} />
+        </div>
+        <div className="lg:col-span-2">
+          <HighestPerCategory rows={highest} />
+        </div>
+      </div>
     </div>
   );
 }
