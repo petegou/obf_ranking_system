@@ -18,7 +18,7 @@
 - [x] Task 9 — Wire up `<FundSearch>` typeahead + `/api/funds/search`
 
 ## Data helpers
-- [ ] Task 10 — Add `getOverviewKpis()`
+- [x] Task 10 — Add `getOverviewKpis()`
 - [ ] Task 11 — Add `getAllFundsForScatter()`
 - [ ] Task 12 — Add `getFundPeerStats()`
 

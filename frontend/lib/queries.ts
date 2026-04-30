@@ -152,3 +152,58 @@ export async function getFundDetail(ticker: string, asOfDate?: string | null) {
     metrics: metrics ?? null,
   };
 }
+
+export interface OverviewKpis {
+  totalFunds: number;
+  categoryCount: number;
+  avgGpaScore: number;
+  pctScoringSeventyOrAbove: number;
+  asOfDate: string | null;
+}
+
+export async function getOverviewKpis(): Promise<OverviewKpis> {
+  const date = await resolveAsOfDate(null);
+  if (!date) {
+    return {
+      totalFunds: 0,
+      categoryCount: 0,
+      avgGpaScore: 0,
+      pctScoringSeventyOrAbove: 0,
+      asOfDate: null,
+    };
+  }
+
+  const { data, error } = await supabase
+    .from("fund_rankings")
+    .select("total_gpa_score, funds!inner(category)")
+    .eq("as_of_date", date)
+    .limit(MAX_ROWS);
+  if (error) throw new Error(error.message);
+
+  type Row = {
+    total_gpa_score: number | null;
+    funds: { category: string } | { category: string }[] | null;
+  };
+
+  const rows = ((data as unknown as Row[] | null) ?? []);
+  const total = rows.length;
+  const categories = new Set<string>();
+  let scoreSum = 0;
+  let scoreSeventy = 0;
+
+  for (const r of rows) {
+    const score = r.total_gpa_score ?? 0;
+    scoreSum += score;
+    if (score >= 70) scoreSeventy += 1;
+    const fund = Array.isArray(r.funds) ? r.funds[0] : r.funds;
+    if (fund?.category) categories.add(fund.category);
+  }
+
+  return {
+    totalFunds: total,
+    categoryCount: categories.size,
+    avgGpaScore: total > 0 ? scoreSum / total : 0,
+    pctScoringSeventyOrAbove: total > 0 ? (scoreSeventy / total) * 100 : 0,
+    asOfDate: date,
+  };
+}
