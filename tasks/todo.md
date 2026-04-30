@@ -41,7 +41,7 @@
 - [x] Task 22 — Build `<ComingSoonPanel>` and placeholder routes for compare/scatter/distribution
 
 ## Loading + errors
-- [ ] Task 23 — Add `loading.tsx` and `error.tsx` for workbench routes
+- [x] Task 23 — Add `loading.tsx` and `error.tsx` for workbench routes
 
 ## Final verification
 - [ ] Task 24 — Walk through spec verification checklist + typecheck + lint
