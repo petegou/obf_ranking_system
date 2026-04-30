@@ -1,20 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
-import { NavHeader } from "@/components/nav-header";
 import "./globals.css";
-import { cn } from "@/lib/utils";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jetbrainsMono = JetBrains_Mono({
+  variable: "--font-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -31,23 +29,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>
-          <NavHeader />
-          <main className="flex-1">{children}</main>
-        </Providers>
-        <footer
-          className="border-t text-center py-4 text-sm"
-          style={{
-            borderColor: "var(--card-border)",
-            color: "var(--text-muted)",
-          }}
-        >
-          Oak Bridge Financial &mdash; Rankings are decision-support tools, not
-          absolute selections.
-        </footer>
+      <body className="min-h-full flex flex-col bg-[var(--surface-base)] text-[var(--text-primary)]">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

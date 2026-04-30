@@ -18,8 +18,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #0d1f33;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -28,7 +28,7 @@
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --ring: #0d1f33;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -37,7 +37,7 @@
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: #0d1f33;
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
@@ -49,7 +49,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -98,6 +98,52 @@
     --accent-muted: #1a2840;
     --gold: #d4af37;
     --text-muted: #94a3b8;
+  }
+}
+
+/* === Project tokens (Phase 1 dashboard redesign) === */
+:root {
+  /* Surface scale (monochrome chrome) */
+  --surface-base: #fafafa;
+  --surface-card: #ffffff;
+  --surface-muted: #f5f5f5;
+  --border-subtle: #ececec;
+  --border-default: #e5e5e5;
+  --text-primary: #0a0a0a;
+  --text-secondary: #525252;
+  --text-tertiary: #737373;
+  --text-quaternary: #a3a3a3;
+
+  /* Brand accents (used sparingly) */
+  --brand-primary: #0d1f33;
+  --brand-primary-tint: rgba(13, 31, 51, 0.04);
+  --brand-gold: #c9a84c;
+
+  /* Semantic data scale (score values only) */
+  --score-strong: #15803d;
+  --score-moderate: #a16207;
+  --score-weak: #b91c1c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface-base: #0a0a0a;
+    --surface-card: #141414;
+    --surface-muted: #1f1f1f;
+    --border-subtle: #262626;
+    --border-default: #303030;
+    --text-primary: #fafafa;
+    --text-secondary: #a3a3a3;
+    --text-tertiary: #737373;
+    --text-quaternary: #525252;
+
+    --brand-primary: #4a8fd4;
+    --brand-primary-tint: rgba(74, 143, 212, 0.08);
+    --brand-gold: #d4af37;
+
+    --score-strong: #16a34a;
+    --score-moderate: #ca8a04;
+    --score-weak: #ef4444;
   }
 }
 
