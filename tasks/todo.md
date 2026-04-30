@@ -30,7 +30,7 @@
 ## Category workbench
 - [x] Task 16 — Promote `<ScoreBar>` to shared component
 - [x] Task 17 — Build `<RankingsGrid>` (AG Grid + URL selection)
-- [ ] Task 18 — Build `<FundDetailPanel>` + tab subcomponents
+- [x] Task 18 — Build `<FundDetailPanel>` + tab subcomponents
 - [ ] Task 19 — Compose category workbench page
 
 ## Fund detail refresh + redirect
