@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ category: string }>;
-  searchParams: Promise<{ fund?: string }>;
+  searchParams: Promise<{ fund?: string | string[] }>;
 }
 
 export default async function CategoryWorkbenchPage({
@@ -17,7 +17,7 @@ export default async function CategoryWorkbenchPage({
   searchParams,
 }: PageProps) {
   const { category: rawCategory } = await params;
-  const { fund: selectedFund } = await searchParams;
+  const { fund } = await searchParams;
   const category = decodeURIComponent(rawCategory);
   const result = await getRankingsForCategory(category);
 
@@ -32,8 +32,14 @@ export default async function CategoryWorkbenchPage({
     turnoverScore: ranking.turnover_score,
   }));
 
+  const selectedTickers: string[] = fund
+    ? Array.isArray(fund) ? fund : [fund]
+    : [];
+
+  const panelKey = [...selectedTickers].sort().join(",");
+
   return (
-    <div className="h-[calc(100vh-2.75rem)] flex">
+    <div className="h-full flex">
       <section className="flex-1 min-w-0 flex flex-col">
         <header className="px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-card)]">
           <h1 className="text-base font-semibold tracking-tight">{category}</h1>
@@ -46,14 +52,18 @@ export default async function CategoryWorkbenchPage({
           <RankingsGrid rows={rows} category={category} />
         </div>
       </section>
-      <aside className="w-80 shrink-0 border-l border-[var(--border-subtle)] bg-[var(--surface-card)]">
-        {selectedFund ? (
+      <aside
+        className={`shrink-0 border-l border-[var(--border-subtle)] bg-[var(--surface-card)] flex flex-col min-h-0 overflow-hidden transition-[width] duration-200 ${
+          selectedTickers.length > 0 ? "w-[640px]" : "w-80"
+        }`}
+      >
+        {selectedTickers.length > 0 ? (
           <Suspense
-            key={selectedFund}
-            fallback={<div className="p-4 text-xs">Loading...</div>}
+            key={panelKey}
+            fallback={<div className="p-4 flex-1 min-h-0 text-xs">Loading...</div>}
           >
-            <PanelMotion key={selectedFund}>
-              <FundDetailPanel ticker={selectedFund} />
+            <PanelMotion key={panelKey}>
+              <FundDetailPanel tickers={selectedTickers} rows={rows} />
             </PanelMotion>
           </Suspense>
         ) : (
