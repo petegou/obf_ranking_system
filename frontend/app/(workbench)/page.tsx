@@ -1,18 +1,20 @@
-import { getAllFundsForScatter, getOverviewKpis } from "@/lib/queries";
+import { KpiStrip } from "@/components/overview/kpi-strip";
+import { getOverviewKpis } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
-export default async function OverviewPlaceholder() {
-  const [kpis, scatter] = await Promise.all([
-    getOverviewKpis(),
-    getAllFundsForScatter(),
-  ]);
+export default async function OverviewPage() {
+  const kpis = await getOverviewKpis();
 
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold">Overview (placeholder)</h1>
-      <p className="mt-2 text-sm">{scatter.length} scatter rows loaded</p>
-      <pre className="mt-4 text-xs">{JSON.stringify(kpis, null, 2)}</pre>
+    <div className="p-8 max-w-7xl mx-auto">
+      <header className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
+        <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
+          Cross-category snapshot of the current rankings.
+        </p>
+      </header>
+      <KpiStrip kpis={kpis} />
     </div>
   );
 }

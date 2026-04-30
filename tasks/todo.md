@@ -23,7 +23,7 @@
 - [x] Task 12 — Add `getFundPeerStats()`
 
 ## Overview page
-- [ ] Task 13 — Build `<KpiStrip>`
+- [x] Task 13 — Build `<KpiStrip>`
 - [ ] Task 14 — Build `<RiskReturnScatter>`
 - [ ] Task 15 — Build `<HighestPerCategory>`
 
