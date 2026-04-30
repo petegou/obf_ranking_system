@@ -35,7 +35,7 @@
 
 ## Fund detail refresh + redirect
 - [x] Task 20 — Restyle `/funds/[ticker]` with new tokens
-- [ ] Task 21 — Add `/rankings`→`/categories` and `/fund`→`/funds` redirects
+- [x] Task 21 — Add `/rankings`→`/categories` and `/fund`→`/funds` redirects
 
 ## Phase 2 placeholders
 - [ ] Task 22 — Build `<ComingSoonPanel>` and placeholder routes for compare/scatter/distribution

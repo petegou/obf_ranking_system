@@ -17,6 +17,20 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/rankings/:category",
+        destination: "/categories/:category",
+        permanent: true,
+      },
+      {
+        source: "/fund/:ticker",
+        destination: "/funds/:ticker",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
