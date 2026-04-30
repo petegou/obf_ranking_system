@@ -207,3 +207,55 @@ export async function getOverviewKpis(): Promise<OverviewKpis> {
     asOfDate: date,
   };
 }
+
+export interface FundScatterRow {
+  ticker: string;
+  name: string;
+  category: string;
+  riskScore: number;
+  returnScore: number;
+  totalGpaScore: number;
+  marketCapScore: number;
+}
+
+export async function getAllFundsForScatter(): Promise<FundScatterRow[]> {
+  const date = await resolveAsOfDate(null);
+  if (!date) return [];
+
+  const { data, error } = await supabase
+    .from("fund_rankings")
+    .select(
+      `ticker,
+       risk_score,
+       return_score,
+       total_gpa_score,
+       market_cap_score,
+       funds!inner(name, category)`
+    )
+    .eq("as_of_date", date)
+    .limit(MAX_ROWS);
+  if (error) throw new Error(error.message);
+
+  type Row = {
+    ticker: string;
+    risk_score: number | null;
+    return_score: number | null;
+    total_gpa_score: number | null;
+    market_cap_score: number | null;
+    funds: { name: string; category: string } | { name: string; category: string }[] | null;
+  };
+
+  return ((data as unknown as Row[] | null) ?? []).map((r) => {
+    const fund = Array.isArray(r.funds) ? r.funds[0] : r.funds;
+
+    return {
+      ticker: r.ticker,
+      name: fund?.name ?? r.ticker,
+      category: fund?.category ?? "",
+      riskScore: r.risk_score ?? 0,
+      returnScore: r.return_score ?? 0,
+      totalGpaScore: r.total_gpa_score ?? 0,
+      marketCapScore: r.market_cap_score ?? 0,
+    };
+  });
+}

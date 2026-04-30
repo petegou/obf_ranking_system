@@ -19,7 +19,7 @@
 
 ## Data helpers
 - [x] Task 10 — Add `getOverviewKpis()`
-- [ ] Task 11 — Add `getAllFundsForScatter()`
+- [x] Task 11 — Add `getAllFundsForScatter()`
 - [ ] Task 12 — Add `getFundPeerStats()`
 
 ## Overview page
