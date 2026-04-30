@@ -31,7 +31,7 @@
 - [x] Task 16 — Promote `<ScoreBar>` to shared component
 - [x] Task 17 — Build `<RankingsGrid>` (AG Grid + URL selection)
 - [x] Task 18 — Build `<FundDetailPanel>` + tab subcomponents
-- [ ] Task 19 — Compose category workbench page
+- [x] Task 19 — Compose category workbench page
 
 ## Fund detail refresh + redirect
 - [ ] Task 20 — Restyle `/funds/[ticker]` with new tokens

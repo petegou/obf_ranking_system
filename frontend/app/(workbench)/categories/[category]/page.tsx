@@ -1,158 +1,65 @@
-import Link from "next/link";
+import { Suspense } from "react";
+import { EmptyDetail } from "@/components/workbench/empty-detail";
+import { FundDetailPanel } from "@/components/workbench/fund-detail-panel";
+import { PanelMotion } from "@/components/workbench/panel-motion";
+import { RankingsGrid, type RankingRow } from "@/components/workbench/rankings-grid";
 import { getRankingsForCategory } from "@/lib/queries";
-import { scoreColorVar } from "@/lib/score-color";
 
 export const dynamic = "force-dynamic";
 
-async function getRankings(category: string) {
-  const result = await getRankingsForCategory(category);
-  return result.rankings;
+interface PageProps {
+  params: Promise<{ category: string }>;
+  searchParams: Promise<{ fund?: string }>;
 }
 
-export default async function RankingsPage({
+export default async function CategoryWorkbenchPage({
   params,
-}: {
-  params: Promise<{ category: string }>;
-}) {
+  searchParams,
+}: PageProps) {
   const { category: rawCategory } = await params;
+  const { fund: selectedFund } = await searchParams;
   const category = decodeURIComponent(rawCategory);
-  const rankings = await getRankings(category);
+  const result = await getRankingsForCategory(category);
+
+  const rows: RankingRow[] = result.rankings.map((ranking) => ({
+    rank: ranking.rank,
+    ticker: ranking.ticker,
+    name: ranking.name,
+    totalGpaScore: ranking.total_gpa_score,
+    riskScore: ranking.risk_score,
+    returnScore: ranking.return_score,
+    marketCapScore: ranking.market_cap_score,
+    turnoverScore: ranking.turnover_score,
+  }));
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-10">
-      <div className="mb-6">
-        <Link
-          href="/"
-          className="text-sm font-medium no-underline hover:underline"
-          style={{ color: "var(--accent)" }}
-        >
-          &larr; All Categories
-        </Link>
-      </div>
-
-      <div className="mb-8">
-        <h1
-          className="text-3xl font-bold mb-1"
-          style={{ color: "var(--foreground)" }}
-        >
-          {category}
-        </h1>
-        <p style={{ color: "var(--text-muted)" }}>
-          {rankings.length} funds ranked by Oak Bridge multi-factor score
-        </p>
-      </div>
-
-      {rankings.length === 0 ? (
-        <div
-          className="text-center py-16 rounded-lg border"
-          style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-            color: "var(--text-muted)",
-          }}
-        >
-          <p>No rankings available for this category.</p>
+    <div className="h-[calc(100vh-2.75rem)] flex">
+      <section className="flex-1 min-w-0 flex flex-col">
+        <header className="px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-card)]">
+          <h1 className="text-base font-semibold tracking-tight">{category}</h1>
+          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+            {rows.length} funds ranked by Oak Bridge multi-factor GPA -
+            decision support only.
+          </p>
+        </header>
+        <div className="flex-1 min-h-0">
+          <RankingsGrid rows={rows} category={category} />
         </div>
-      ) : (
-        <div
-          className="rounded-lg border overflow-hidden"
-          style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-          }}
-        >
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr
-                  style={{
-                    backgroundColor: "var(--accent-muted)",
-                    color: "var(--text-muted)",
-                  }}
-                >
-                  <th className="text-left px-4 py-3 font-semibold w-16">
-                    Rank
-                  </th>
-                  <th className="text-left px-4 py-3 font-semibold">Ticker</th>
-                  <th className="text-left px-4 py-3 font-semibold hidden md:table-cell">
-                    Name
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold">
-                    GPA Score
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold hidden sm:table-cell">
-                    Risk
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold hidden sm:table-cell">
-                    Return
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold hidden lg:table-cell">
-                    Mkt Cap
-                  </th>
-                  <th className="text-right px-4 py-3 font-semibold hidden lg:table-cell">
-                    Turnover
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {rankings.map((fund, i) => (
-                  <tr
-                    key={fund.ticker}
-                    className="transition-colors"
-                    style={{
-                      borderTop: "1px solid var(--card-border)",
-                      backgroundColor:
-                        i % 2 === 0 ? "transparent" : "var(--accent-muted)",
-                    }}
-                  >
-                    <td className="px-4 py-3 font-mono font-bold">
-                      {fund.rank}
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/funds/${encodeURIComponent(fund.ticker)}`}
-                        className="font-semibold no-underline hover:underline"
-                        style={{ color: "var(--accent)" }}
-                      >
-                        {fund.ticker}
-                      </Link>
-                    </td>
-                    <td
-                      className="px-4 py-3 hidden md:table-cell"
-                      style={{ color: "var(--text-muted)" }}
-                    >
-                      {fund.name}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold">
-                      <span style={{ color: scoreColorVar(fund.total_gpa_score) }}>
-                        {fund.total_gpa_score.toFixed(2)}
-                      </span>
-                    </td>
-                    <td
-                      className="px-4 py-3 text-right font-mono hidden sm:table-cell"
-                      style={{ color: scoreColorVar(fund.risk_score) }}
-                    >
-                      {fund.risk_score.toFixed(1)}
-                    </td>
-                    <td
-                      className="px-4 py-3 text-right font-mono hidden sm:table-cell"
-                      style={{ color: scoreColorVar(fund.return_score) }}
-                    >
-                      {fund.return_score.toFixed(1)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono hidden lg:table-cell">
-                      {fund.market_cap_score.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono hidden lg:table-cell">
-                      {fund.turnover_score.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      </section>
+      <aside className="w-80 shrink-0 border-l border-[var(--border-subtle)] bg-[var(--surface-card)]">
+        {selectedFund ? (
+          <Suspense
+            key={selectedFund}
+            fallback={<div className="p-4 text-xs">Loading...</div>}
+          >
+            <PanelMotion key={selectedFund}>
+              <FundDetailPanel ticker={selectedFund} />
+            </PanelMotion>
+          </Suspense>
+        ) : (
+          <EmptyDetail />
+        )}
+      </aside>
     </div>
   );
 }
