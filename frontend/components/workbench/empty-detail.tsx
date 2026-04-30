@@ -1,6 +1,6 @@
 export function EmptyDetail() {
   return (
-    <div className="p-6 h-full flex flex-col items-center justify-center text-center">
+    <div className="p-6 flex-1 min-h-0 flex flex-col items-center justify-center text-center">
       <div className="text-sm font-medium text-[var(--text-secondary)]">
         Select a fund
       </div>

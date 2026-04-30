@@ -17,15 +17,18 @@ function NavLink({ href, label, count, disabled, isActive }: NavLinkProps) {
   const pathname = usePathname();
   const active = !disabled && isActive(pathname);
   const baseClasses =
-    "flex items-center justify-between px-3 py-1.5 rounded-md text-sm transition-colors";
+    "flex items-center gap-2 px-3 py-1.5 rounded-md text-sm transition-colors";
 
   if (disabled) {
     return (
       <span
         className={`${baseClasses} text-[var(--text-quaternary)] cursor-not-allowed`}
+        title={label}
       >
-        <span>{label}</span>
-        <span className="text-[10px] uppercase tracking-wider">Soon</span>
+        <span className="flex-1 min-w-0 truncate">{label}</span>
+        <span className="text-[10px] uppercase tracking-wider shrink-0">
+          Soon
+        </span>
       </span>
     );
   }
@@ -33,15 +36,16 @@ function NavLink({ href, label, count, disabled, isActive }: NavLinkProps) {
   return (
     <Link
       href={href}
+      title={label}
       className={`${baseClasses} no-underline ${
         active
           ? "bg-[var(--brand-primary-tint)] text-[var(--brand-primary)] font-medium border-l-2 border-[var(--brand-primary)] pl-[10px]"
           : "text-[var(--text-secondary)] hover:bg-[var(--surface-muted)]"
       }`}
     >
-      <span>{label}</span>
+      <span className="flex-1 min-w-0 truncate">{label}</span>
       {count !== undefined && (
-        <span className="font-mono text-[11px] text-[var(--text-quaternary)] tabular-nums">
+        <span className="font-mono text-[11px] text-[var(--text-quaternary)] tabular-nums shrink-0">
           {count}
         </span>
       )}
@@ -62,7 +66,7 @@ export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
 
   return (
     <aside className="w-60 shrink-0 border-r border-[var(--border-subtle)] bg-[var(--surface-card)] flex flex-col">
-      <div className="px-4 py-4 border-b border-[var(--border-subtle)]">
+      <div className="shrink-0 px-4 py-4 border-b border-[var(--border-subtle)]">
         <div className="flex items-baseline gap-2">
           <span className="text-base font-semibold tracking-tight text-[var(--text-primary)]">
             Oak Bridge
@@ -119,7 +123,7 @@ export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
       </nav>
 
       {user && (
-        <div className="px-3 py-3 border-t border-[var(--border-subtle)]">
+        <div className="shrink-0 px-3 py-3 border-t border-[var(--border-subtle)]">
           <div className="text-xs text-[var(--text-tertiary)] truncate">
             {user.email}
           </div>

@@ -35,7 +35,19 @@
       "Bash(npx tsc:*)",
       "Bash(git merge:*)",
       "Bash(git checkout:*)",
-      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder SUPABASE_SERVICE_ROLE_KEY=placeholder npm run build)"
+      "Bash(NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder SUPABASE_SERVICE_ROLE_KEY=placeholder npm run build)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__execute_sql",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000)",
+      "Bash(curl -s http://localhost:3001/api/categories)",
+      "Bash(curl -s http://localhost:3001/api/rankings/all)",
+      "Bash(curl -s \"http://localhost:3001/api/rankings?category=Equity%20US\")",
+      "Bash(curl -s -o /dev/null -w \"/funds:%{http_code}\\\\n/api/rankings/all:%{http_code}\\\\n\" http://localhost:3001/funds)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/api/rankings/all)",
+      "mcp__supabase__apply_migration",
+      "Bash(curl -s \"http://localhost:3001/api/categories\")",
+      "Bash(git push *)",
+      "Bash(git *)"
     ]
   }
 }

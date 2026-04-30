@@ -14,11 +14,11 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex bg-[var(--surface-base)]">
+    <div className="h-screen flex bg-[var(--surface-base)] overflow-hidden">
       <Sidebar categories={categories} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <TopBar />
-        <main className="flex-1 min-w-0 overflow-auto">{children}</main>
+        <main className="flex-1 min-w-0 min-h-0 overflow-auto">{children}</main>
       </div>
     </div>
   );

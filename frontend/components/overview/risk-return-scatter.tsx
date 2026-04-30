@@ -1,20 +1,22 @@
 "use client";
 
+import "@/lib/ag-charts-setup";
 import { AgCharts } from "ag-charts-react";
 import type { AgCartesianChartOptions } from "ag-charts-community";
 import { useRouter } from "next/navigation";
 import { useMemo } from "react";
 import type { FundScatterRow } from "@/lib/queries";
+import { useIsDarkMode } from "@/lib/use-color-scheme";
 
 const CATEGORY_COLORS = [
-  "#0d1f33",
-  "#15803d",
-  "#a16207",
-  "#b91c1c",
-  "#5b21b6",
-  "#0f766e",
-  "#9333ea",
-  "#c2410c",
+  "#3b82f6",
+  "#22c55e",
+  "#f59e0b",
+  "#ef4444",
+  "#a855f7",
+  "#14b8a6",
+  "#ec4899",
+  "#f97316",
 ];
 
 function colorForCategory(category: string, index: Map<string, number>): string {
@@ -28,6 +30,8 @@ function colorForCategory(category: string, index: Map<string, number>): string 
 
 export function RiskReturnScatter({ rows }: { rows: FundScatterRow[] }) {
   const router = useRouter();
+  const isDark = useIsDarkMode();
+  const axisLabelColor = isDark ? "#a3a3a3" : "#737373";
 
   const options = useMemo<AgCartesianChartOptions>(() => {
     const colorIndex = new Map<string, number>();
@@ -40,21 +44,28 @@ export function RiskReturnScatter({ rows }: { rows: FundScatterRow[] }) {
     }
 
     return {
+      theme: isDark ? "ag-default-dark" : "ag-default",
       data: rows,
       background: { fill: "transparent" },
-      legend: { position: "bottom", spacing: 16 },
+      legend: {
+        position: "bottom",
+        spacing: 16,
+        item: { label: { color: axisLabelColor } },
+      },
       axes: {
         x: {
           type: "number",
           position: "bottom",
-          title: { text: "Risk Score", color: "#737373" },
+          title: { text: "Risk Score", color: axisLabelColor },
+          label: { color: axisLabelColor },
           min: 0,
           max: 100,
         },
         y: {
           type: "number",
           position: "left",
-          title: { text: "Return Score", color: "#737373" },
+          title: { text: "Return Score", color: axisLabelColor },
+          label: { color: axisLabelColor },
           min: 0,
           max: 100,
         },
@@ -91,7 +102,7 @@ export function RiskReturnScatter({ rows }: { rows: FundScatterRow[] }) {
         },
       })),
     };
-  }, [rows, router]);
+  }, [rows, router, isDark, axisLabelColor]);
 
   return (
     <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4">
