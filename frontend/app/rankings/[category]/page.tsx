@@ -1,18 +1,12 @@
 import Link from "next/link";
 import { getRankingsForCategory } from "@/lib/queries";
+import { scoreColorVar } from "@/lib/score-color";
 
 export const dynamic = "force-dynamic";
 
 async function getRankings(category: string) {
   const result = await getRankingsForCategory(category);
   return result.rankings;
-}
-
-function scoreColor(score: number): string {
-  if (score >= 70) return "#16a34a";
-  if (score >= 50) return "#ca8a04";
-  if (score >= 30) return "#ea580c";
-  return "#dc2626";
 }
 
 export default async function RankingsPage({
@@ -130,19 +124,19 @@ export default async function RankingsPage({
                       {fund.name}
                     </td>
                     <td className="px-4 py-3 text-right font-mono font-bold">
-                      <span style={{ color: scoreColor(fund.total_gpa_score) }}>
+                      <span style={{ color: scoreColorVar(fund.total_gpa_score) }}>
                         {fund.total_gpa_score.toFixed(2)}
                       </span>
                     </td>
                     <td
                       className="px-4 py-3 text-right font-mono hidden sm:table-cell"
-                      style={{ color: scoreColor(fund.risk_score) }}
+                      style={{ color: scoreColorVar(fund.risk_score) }}
                     >
                       {fund.risk_score.toFixed(1)}
                     </td>
                     <td
                       className="px-4 py-3 text-right font-mono hidden sm:table-cell"
-                      style={{ color: scoreColor(fund.return_score) }}
+                      style={{ color: scoreColorVar(fund.return_score) }}
                     >
                       {fund.return_score.toFixed(1)}
                     </td>

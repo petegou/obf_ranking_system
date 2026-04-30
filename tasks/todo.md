@@ -7,7 +7,7 @@
 ## Setup
 - [x] Task 1 — Install shadcn/ui + motion
 - [x] Task 2 — Add Inter + JetBrains Mono fonts and color tokens
-- [ ] Task 3 — Centralize `scoreColor()` into `lib/score-color.ts`
+- [x] Task 3 — Centralize `scoreColor()` into `lib/score-color.ts`
 
 ## Layout shell
 - [ ] Task 4 — Create `(auth)` route group for login/setup

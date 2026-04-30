@@ -1,14 +1,12 @@
 import Link from "next/link";
 import { getFundDetail } from "@/lib/queries";
+import { scoreColorVar } from "@/lib/score-color";
 
 export const dynamic = "force-dynamic";
 
 function ScoreBar({ label, value, max = 100 }: { label: string; value: number; max?: number }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
-  let barColor = "#dc2626";
-  if (value >= 70) barColor = "#16a34a";
-  else if (value >= 50) barColor = "#ca8a04";
-  else if (value >= 30) barColor = "#ea580c";
+  const barColor = scoreColorVar(value);
 
   return (
     <div className="flex items-center gap-3 py-1.5">
@@ -103,12 +101,7 @@ export default async function FundDetailPage({
             <div
               className="text-4xl font-bold font-mono"
               style={{
-                color:
-                  fund.total_gpa_score >= 70
-                    ? "#16a34a"
-                    : fund.total_gpa_score >= 50
-                    ? "#ca8a04"
-                    : "#dc2626",
+                color: scoreColorVar(fund.total_gpa_score),
               }}
             >
               {fund.total_gpa_score.toFixed(2)}
