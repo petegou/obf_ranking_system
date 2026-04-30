@@ -28,7 +28,7 @@
 - [x] Task 15 — Build `<HighestPerCategory>`
 
 ## Category workbench
-- [ ] Task 16 — Promote `<ScoreBar>` to shared component
+- [x] Task 16 — Promote `<ScoreBar>` to shared component
 - [ ] Task 17 — Build `<RankingsGrid>` (AG Grid + URL selection)
 - [ ] Task 18 — Build `<FundDetailPanel>` + tab subcomponents
 - [ ] Task 19 — Compose category workbench page

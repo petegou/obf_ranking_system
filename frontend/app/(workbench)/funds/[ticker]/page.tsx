@@ -1,36 +1,9 @@
 import Link from "next/link";
+import { ScoreBar } from "@/components/score-bar";
 import { getFundDetail } from "@/lib/queries";
 import { scoreColorVar } from "@/lib/score-color";
 
 export const dynamic = "force-dynamic";
-
-function ScoreBar({ label, value, max = 100 }: { label: string; value: number; max?: number }) {
-  const pct = Math.min(100, Math.max(0, (value / max) * 100));
-  const barColor = scoreColorVar(value);
-
-  return (
-    <div className="flex items-center gap-3 py-1.5">
-      <span
-        className="text-sm w-32 shrink-0 capitalize"
-        style={{ color: "var(--text-muted)" }}
-      >
-        {label.replace(/_/g, " ")}
-      </span>
-      <div
-        className="flex-1 h-5 rounded-full overflow-hidden"
-        style={{ backgroundColor: "var(--accent-muted)" }}
-      >
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, backgroundColor: barColor }}
-        />
-      </div>
-      <span className="text-sm font-mono w-14 text-right font-medium">
-        {value.toFixed(1)}
-      </span>
-    </div>
-  );
-}
 
 export default async function FundDetailPage({
   params,
