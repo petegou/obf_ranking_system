@@ -13,7 +13,7 @@
 - [x] Task 4 — Create `(auth)` route group for login/setup
 - [x] Task 5 — Build `<AppShell>` skeleton + `(workbench)/layout.tsx`
 - [x] Task 6 — Build full `<Sidebar>` with categories, analysis, admin sections
-- [ ] Task 7 — Build `<TopBar>` with breadcrumb + search slot
+- [x] Task 7 — Build `<TopBar>` with breadcrumb + search slot
 - [ ] Task 8 — Migrate existing pages into `(workbench)`; rename rankings→categories, fund→funds
 - [ ] Task 9 — Wire up `<FundSearch>` typeahead + `/api/funds/search`
 
