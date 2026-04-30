@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AgGridReact } from "ag-grid-react";
 import type {
@@ -9,11 +9,39 @@ import type {
   RowSelectedEvent,
   ValueFormatterParams,
 } from "ag-grid-community";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import "ag-grid-community/styles/ag-theme-quartz.css";
+import { AllCommunityModule, ModuleRegistry, themeQuartz } from "ag-grid-community";
 import { scoreColorVar } from "@/lib/score-color";
+import { useIsDarkMode } from "@/lib/use-color-scheme";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+const gridThemeLight = themeQuartz.withParams({
+  backgroundColor: "#ffffff",
+  foregroundColor: "#0a0a0a",
+  borderColor: "#ececec",
+  chromeBackgroundColor: "#fafafa",
+  headerBackgroundColor: "#fafafa",
+  headerTextColor: "#525252",
+  rowHoverColor: "#f5f5f5",
+  selectedRowBackgroundColor: "rgba(13, 31, 51, 0.04)",
+  accentColor: "#0d1f33",
+  fontSize: 13,
+  fontFamily: "inherit",
+});
+
+const gridThemeDark = themeQuartz.withParams({
+  backgroundColor: "#141414",
+  foregroundColor: "#fafafa",
+  borderColor: "#262626",
+  chromeBackgroundColor: "#0a0a0a",
+  headerBackgroundColor: "#0a0a0a",
+  headerTextColor: "#a3a3a3",
+  rowHoverColor: "#1f1f1f",
+  selectedRowBackgroundColor: "rgba(74, 143, 212, 0.08)",
+  accentColor: "#4a8fd4",
+  fontSize: 13,
+  fontFamily: "inherit",
+});
 
 export interface RankingRow {
   rank: number;
@@ -52,10 +80,12 @@ export function RankingsGrid({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedTicker = searchParams.get("fund");
-  const [api, setApi] = useState<GridReadyEvent<RankingRow>["api"] | null>(
-    null
-  );
+  const isDark = useIsDarkMode();
+  const selectedTickers = searchParams.getAll("fund");
+  const tickerKey = selectedTickers.join(",");
+
+  const [api, setApi] = useState<GridReadyEvent<RankingRow>["api"] | null>(null);
+  const isSyncing = useRef(false);
 
   const columns = useMemo<ColDef<RankingRow>[]>(
     () => [
@@ -126,22 +156,38 @@ export function RankingsGrid({
     []
   );
 
+  // Sync grid selection state from URL on mount and when URL changes
   useEffect(() => {
-    if (!api || !selectedTicker) return;
-    const node = api.getRowNode(selectedTicker);
-    if (node) {
-      node.setSelected(true, true);
-      api.ensureNodeVisible(node, "middle");
+    if (!api) return;
+    const tickers = tickerKey ? tickerKey.split(",") : [];
+    isSyncing.current = true;
+    api.forEachNode((node) => {
+      node.setSelected(tickers.includes(node.data?.ticker ?? ""), false, "api");
+    });
+    isSyncing.current = false;
+    const firstTicker = tickers[0];
+    if (firstTicker) {
+      const node = api.getRowNode(firstTicker);
+      if (node) api.ensureNodeVisible(node, "middle");
     }
-  }, [api, selectedTicker]);
+  }, [api, tickerKey]);
 
   function onRowSelected(event: RowSelectedEvent<RankingRow>) {
-    if (!event.node.isSelected()) return;
+    if (isSyncing.current) return;
     const ticker = event.data?.ticker;
     if (!ticker) return;
 
+    const current = searchParams.getAll("fund");
+    const isNowSelected = event.node.isSelected();
+
+    const next = isNowSelected
+      ? current.includes(ticker) ? current : [...current, ticker]
+      : current.filter((t) => t !== ticker);
+
     const params = new URLSearchParams(searchParams.toString());
-    params.set("fund", ticker);
+    params.delete("fund");
+    next.forEach((t) => params.append("fund", t));
+
     router.replace(
       `/categories/${encodeURIComponent(category)}?${params.toString()}`,
       { scroll: false }
@@ -149,11 +195,12 @@ export function RankingsGrid({
   }
 
   return (
-    <div className="ag-theme-quartz h-full" style={{ height: "100%" }}>
+    <div style={{ height: "100%" }}>
       <AgGridReact<RankingRow>
+        theme={isDark ? gridThemeDark : gridThemeLight}
         rowData={rows}
         columnDefs={columns}
-        rowSelection="single"
+        rowSelection="multiple"
         getRowId={(params) => params.data.ticker}
         onGridReady={(event) => setApi(event.api)}
         onRowSelected={onRowSelected}
