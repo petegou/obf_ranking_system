@@ -259,3 +259,98 @@ export async function getAllFundsForScatter(): Promise<FundScatterRow[]> {
     };
   });
 }
+
+export interface PeerMetric {
+  label: string;
+  fundValue: number;
+  categoryAverage: number;
+}
+
+export interface FundPeerStats {
+  ticker: string;
+  category: string;
+  metrics: PeerMetric[];
+}
+
+export async function getFundPeerStats(
+  ticker: string
+): Promise<FundPeerStats | null> {
+  const date = await resolveAsOfDate(null, ticker);
+  if (!date) return null;
+
+  const { data: fund } = await supabase
+    .from("funds")
+    .select("ticker, category")
+    .ilike("ticker", ticker)
+    .single();
+  if (!fund) return null;
+
+  const { data, error } = await supabase
+    .from("fund_rankings")
+    .select(
+      `ticker,
+       risk_score,
+       return_score,
+       market_cap_score,
+       turnover_score,
+       total_gpa_score,
+       funds!inner(category)`
+    )
+    .eq("as_of_date", date)
+    .eq("funds.category", fund.category)
+    .limit(MAX_ROWS);
+  if (error) throw new Error(error.message);
+
+  type Row = {
+    ticker: string;
+    risk_score: number | null;
+    return_score: number | null;
+    market_cap_score: number | null;
+    turnover_score: number | null;
+    total_gpa_score: number | null;
+  };
+
+  type MetricKey = Exclude<keyof Row, "ticker">;
+
+  const rows = ((data as unknown as Row[] | null) ?? []);
+  const me = rows.find((r) => r.ticker === fund.ticker);
+  if (!me) return null;
+
+  const avg = (key: MetricKey): number => {
+    const vals = rows
+      .map((r) => r[key])
+      .filter((v): v is number => typeof v === "number");
+    if (vals.length === 0) return 0;
+    return vals.reduce((sum, value) => sum + value, 0) / vals.length;
+  };
+
+  const metrics: PeerMetric[] = [
+    {
+      label: "Risk",
+      fundValue: me.risk_score ?? 0,
+      categoryAverage: avg("risk_score"),
+    },
+    {
+      label: "Return",
+      fundValue: me.return_score ?? 0,
+      categoryAverage: avg("return_score"),
+    },
+    {
+      label: "Market Cap",
+      fundValue: me.market_cap_score ?? 0,
+      categoryAverage: avg("market_cap_score"),
+    },
+    {
+      label: "Turnover",
+      fundValue: me.turnover_score ?? 0,
+      categoryAverage: avg("turnover_score"),
+    },
+    {
+      label: "GPA",
+      fundValue: me.total_gpa_score ?? 0,
+      categoryAverage: avg("total_gpa_score"),
+    },
+  ];
+
+  return { ticker: fund.ticker, category: fund.category, metrics };
+}

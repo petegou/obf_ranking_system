@@ -20,7 +20,7 @@
 ## Data helpers
 - [x] Task 10 — Add `getOverviewKpis()`
 - [x] Task 11 — Add `getAllFundsForScatter()`
-- [ ] Task 12 — Add `getFundPeerStats()`
+- [x] Task 12 — Add `getFundPeerStats()`
 
 ## Overview page
 - [ ] Task 13 — Build `<KpiStrip>`
