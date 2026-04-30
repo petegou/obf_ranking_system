@@ -19,16 +19,16 @@ export default async function FundDetailPage({
         <Link
           href="/"
           className="text-sm font-medium no-underline hover:underline"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--brand-primary)" }}
         >
           &larr; All Categories
         </Link>
         <div
           className="text-center py-16 mt-6 rounded-lg border"
           style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-            color: "var(--text-muted)",
+            backgroundColor: "var(--surface-card)",
+            borderColor: "var(--border-subtle)",
+            color: "var(--text-tertiary)",
           }}
         >
           <p className="text-lg">Fund &ldquo;{ticker}&rdquo; not found</p>
@@ -43,7 +43,7 @@ export default async function FundDetailPage({
         <Link
           href={`/categories/${encodeURIComponent(fund.category)}`}
           className="text-sm font-medium no-underline hover:underline"
-          style={{ color: "var(--accent)" }}
+          style={{ color: "var(--brand-primary)" }}
         >
           &larr; {fund.category}
         </Link>
@@ -53,8 +53,8 @@ export default async function FundDetailPage({
       <div
         className="rounded-lg border p-6 mb-6"
         style={{
-          backgroundColor: "var(--card-bg)",
-          borderColor: "var(--card-border)",
+          backgroundColor: "var(--surface-card)",
+          borderColor: "var(--border-subtle)",
         }}
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -62,13 +62,13 @@ export default async function FundDetailPage({
             <h1 className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
               {fund.ticker}
             </h1>
-            <p style={{ color: "var(--text-muted)" }}>{fund.name}</p>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            <p style={{ color: "var(--text-tertiary)" }}>{fund.name}</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>
               {fund.category} &middot; Rank #{fund.rank}
             </p>
           </div>
           <div className="text-center sm:text-right">
-            <div className="text-sm font-medium" style={{ color: "var(--text-muted)" }}>
+            <div className="text-sm font-medium" style={{ color: "var(--text-tertiary)" }}>
               Total GPA Score
             </div>
             <div
@@ -95,11 +95,11 @@ export default async function FundDetailPage({
             key={label}
             className="rounded-lg border p-4 text-center"
             style={{
-              backgroundColor: "var(--card-bg)",
-              borderColor: "var(--card-border)",
+              backgroundColor: "var(--surface-card)",
+              borderColor: "var(--border-subtle)",
             }}
           >
-            <div className="text-xs font-medium mb-1" style={{ color: "var(--text-muted)" }}>
+            <div className="text-xs font-medium mb-1" style={{ color: "var(--text-tertiary)" }}>
               {label}
             </div>
             <div className="text-xl font-bold font-mono">
@@ -114,8 +114,8 @@ export default async function FundDetailPage({
         <div
           className="rounded-lg border p-6"
           style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
+            backgroundColor: "var(--surface-card)",
+            borderColor: "var(--border-subtle)",
           }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--foreground)" }}>
@@ -129,8 +129,8 @@ export default async function FundDetailPage({
         <div
           className="rounded-lg border p-6"
           style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
+            backgroundColor: "var(--surface-card)",
+            borderColor: "var(--border-subtle)",
           }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: "var(--foreground)" }}>

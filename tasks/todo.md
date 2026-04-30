@@ -34,7 +34,7 @@
 - [x] Task 19 — Compose category workbench page
 
 ## Fund detail refresh + redirect
-- [ ] Task 20 — Restyle `/funds/[ticker]` with new tokens
+- [x] Task 20 — Restyle `/funds/[ticker]` with new tokens
 - [ ] Task 21 — Add `/rankings`→`/categories` and `/fund`→`/funds` redirects
 
 ## Phase 2 placeholders
