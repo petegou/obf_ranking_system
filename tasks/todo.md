@@ -44,8 +44,27 @@
 - [x] Task 23 — Add `loading.tsx` and `error.tsx` for workbench routes
 
 ## Final verification
-- [ ] Task 24 — Walk through spec verification checklist + typecheck + lint
+- [x] Task 24 — Walk through spec verification checklist + typecheck + lint
 
 ## Review (fill in after execution)
 
-_Append a short summary of what was done, deviations from the plan, and any follow-ups._
+Implemented Phase 1 dashboard redesign on `codex-dashboard-ui-redesign`.
+
+Summary:
+- Added shadcn/Radix primitives, Motion, Inter, JetBrains Mono, project tokens, and shared score coloring.
+- Built the authenticated workbench shell with sidebar, top bar, fund search, overview dashboard, category workbench, full fund detail refresh, legacy redirects, Phase 2 placeholders, and loading/error states.
+- Added overview, scatter, highest-scoring, peer-stats, and fund-search data helpers.
+
+Verification:
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with zero warnings.
+- `npm run build` passed.
+- Browser smoke checked `/login`, `/compare`, and legacy `/rankings/Commodities` redirecting to `/categories/Commodities` on the existing dev server at `localhost:3001`.
+- Copy scan found no app UI usage of "best fund", "winner", "top pick", "best", or "top-ranked".
+
+Deviations and notes:
+- Current shadcn CLI no longer offers the old New York prompt; used the closest current Radix/Lucide/Inter preset and then applied project tokens explicitly.
+- Preserved `/auth/setup` by moving setup to `app/(auth)/auth/setup/page.tsx`; the plan path would have changed the URL to `/setup`.
+- Used a client `TopBar` with `usePathname()` instead of internal request headers.
+- Adjusted AG Charts config for v13 object-style axes and `seriesNodeClick` listener.
+- Full regular-vs-admin browser verification still needs real account coverage; no credentials were provided in this run.

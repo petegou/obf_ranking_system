@@ -202,7 +202,7 @@ export async function importCSV(
   if (fundsError) {
     result.errors.push(`Funds registry upsert failed: ${fundsError}`);
     result.rows_skipped += fundsBatch.length;
-    await logUpload(filename, result, asOfDate);
+    await logUpload(filename, result);
     return result;
   }
 
@@ -215,14 +215,13 @@ export async function importCSV(
     result.rows_upserted = metricsBatch.length;
   }
 
-  await logUpload(filename, result, asOfDate);
+  await logUpload(filename, result);
   return result;
 }
 
 async function logUpload(
   filename: string,
-  result: ImportResult,
-  asOfDate: string
+  result: ImportResult
 ): Promise<void> {
   await supabase.from("upload_log").insert({
     filename,

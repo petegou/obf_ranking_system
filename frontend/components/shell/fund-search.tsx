@@ -23,8 +23,6 @@ export function FundSearch() {
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults([]);
-      setOpen(false);
       return;
     }
 
@@ -70,13 +68,21 @@ export function FundSearch() {
     router.push(`/funds/${encodeURIComponent(ticker)}`);
   }
 
+  function handleQueryChange(value: string) {
+    setQuery(value);
+    if (!value.trim()) {
+      setResults([]);
+      setOpen(false);
+    }
+  }
+
   return (
     <div ref={containerRef} className="relative">
       <Input
         type="text"
         placeholder="Search ticker..."
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => handleQueryChange(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
         onKeyDown={(e) => {
           if (e.key === "Enter" && results[0]) go(results[0].ticker);

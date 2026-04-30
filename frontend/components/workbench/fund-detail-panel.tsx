@@ -15,7 +15,7 @@ export async function FundDetailPanel({ ticker }: { ticker: string }) {
   if (!fund) {
     return (
       <div className="p-4 text-sm text-[var(--text-tertiary)]">
-        Fund "{ticker}" not found in current rankings.
+        Fund {ticker} not found in current rankings.
       </div>
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
@@ -21,21 +21,16 @@ export default function LoginPage() {
 function LoginPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const errorFromParams =
+    ERROR_MESSAGES[searchParams.get("error") ?? ""] ?? null;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(errorFromParams);
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [resetSent, setResetSent] = useState(false);
 
   const supabase = createSupabaseBrowserClient();
-
-  useEffect(() => {
-    const errCode = searchParams.get("error");
-    if (errCode && ERROR_MESSAGES[errCode]) {
-      setError(ERROR_MESSAGES[errCode]);
-    }
-  }, [searchParams]);
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
