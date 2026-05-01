@@ -25,6 +25,7 @@ export function FundComparisonChart({
 }) {
   const isDark = useIsDarkMode();
   const labelColor = isDark ? "#a3a3a3" : "#737373";
+  const gridColor = isDark ? "#374151" : "#d4d4d4";
 
   const selectedRows = useMemo(
     () => selectedTickers.map((t) => rows.find((r) => r.ticker === t)).filter(Boolean) as RankingRow[],
@@ -59,8 +60,10 @@ export function FundComparisonChart({
       theme: isDark ? "ag-default-dark" : "ag-default",
       data,
       background: { fill: "transparent" },
+      padding: { top: 8, right: 8, bottom: 0, left: 0 },
       legend: {
         position: "bottom",
+        spacing: 8,
         item: { label: { color: labelColor } },
       },
       series,
@@ -68,21 +71,22 @@ export function FundComparisonChart({
         x: {
           type: "category",
           position: "left",
-          label: { color: labelColor },
+          label: { color: labelColor, fontSize: 11 },
         },
         y: {
           type: "number",
           position: "bottom",
           min: 0,
           max: 100,
-          label: { color: labelColor },
+          label: { color: labelColor, fontSize: 11 },
+          gridStyle: [{ stroke: gridColor, lineDash: [2, 4] }],
         },
       },
     };
-  }, [selectedTickers, selectedRows, rowByTicker, isDark, labelColor]);
+  }, [selectedTickers, rowByTicker, isDark, labelColor, gridColor]);
 
   return (
-    <div className="h-[240px]">
+    <div className="h-[210px]">
       <AgCharts options={options} />
     </div>
   );

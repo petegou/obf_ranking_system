@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { AccountMenu } from "./account-menu";
 import type { CategoryNavItem } from "./app-shell";
 
 interface NavLinkProps {
@@ -124,15 +125,7 @@ export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
 
       {user && (
         <div className="shrink-0 px-3 py-3 border-t border-[var(--border-subtle)]">
-          <div className="text-xs text-[var(--text-tertiary)] truncate">
-            {user.email}
-          </div>
-          <button
-            onClick={signOut}
-            className="mt-1 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-          >
-            Sign out
-          </button>
+          <AccountMenu user={user} isAdmin={isAdmin} onSignOut={signOut} />
         </div>
       )}
     </aside>

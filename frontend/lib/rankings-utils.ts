@@ -66,6 +66,7 @@ export interface RankingFull {
     price: number;
     fee: number;
   };
+  metrics: Record<string, unknown>;
 }
 
 export interface RankingSlim {
@@ -83,6 +84,7 @@ export interface RankingSlim {
 
 const num = (v: unknown): number => (typeof v === "number" ? v : 0);
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+export const numOrNull = (v: unknown): number | null => (typeof v === "number" ? v : null);
 
 /** Full ranking shape including risk/return breakdowns. */
 export function formatRanking(r: RawRanking): RankingFull {
@@ -119,6 +121,7 @@ export function formatRanking(r: RawRanking): RankingFull {
       price:           num(r.price_comp_score),
       fee:             num(r.fee_comp_score),
     },
+    metrics: {},
   };
 }
 

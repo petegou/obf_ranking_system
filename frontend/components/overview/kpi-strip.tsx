@@ -23,9 +23,16 @@ function KpiCard({ label, value, hint }: KpiCardProps) {
   );
 }
 
+function formatAsOfDate(value: string | null): string {
+  if (!value) return "No snapshot";
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${month}/${day}/${year}`;
+}
+
 export function KpiStrip({ kpis }: { kpis: OverviewKpis }) {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
       <KpiCard label="Total Funds" value={kpis.totalFunds.toLocaleString()} />
       <KpiCard label="Categories" value={kpis.categoryCount.toString()} />
       <KpiCard
@@ -37,6 +44,7 @@ export function KpiStrip({ kpis }: { kpis: OverviewKpis }) {
         label="Scoring 70+"
         value={`${kpis.pctScoringSeventyOrAbove.toFixed(0)}%`}
       />
+      <KpiCard label="As Of" value={formatAsOfDate(kpis.asOfDate)} />
     </div>
   );
 }

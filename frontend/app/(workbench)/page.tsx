@@ -1,36 +1,36 @@
-import { HighestPerCategory } from '@/components/overview/highest-per-category';
+import { CategoryOpportunityTable } from '@/components/overview/category-opportunity-table';
 import { KpiStrip } from '@/components/overview/kpi-strip';
-import { RiskReturnScatter } from '@/components/overview/risk-return-scatter';
+import { ReviewCandidates } from '@/components/overview/review-candidates';
+import { ScoreDistribution } from '@/components/overview/score-distribution';
 import {
-  getAllFundsForScatter,
-  getHighestPerCategory,
+  getOverviewDecisionDashboard,
   getOverviewKpis,
 } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
 export default async function OverviewPage() {
-  const [kpis, scatter, highest] = await Promise.all([
+  const [kpis, dashboard] = await Promise.all([
     getOverviewKpis(),
-    getAllFundsForScatter(),
-    getHighestPerCategory(),
+    getOverviewDecisionDashboard(),
   ]);
 
   return (
-    <div className="p-8 max-w-7xl mx-auto flex flex-col gap-6 h-full">
+    <div className="mx-auto flex h-full max-w-7xl flex-col gap-6 p-8">
       <header>
         <h1 className="text-xl font-semibold tracking-tight">Overview</h1>
         <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-          Cross-category snapshot of the current rankings.
+          Decision dashboard for the current rankings snapshot.
         </p>
       </header>
       <KpiStrip kpis={kpis} />
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 flex-1 min-h-0">
-        <div className="lg:col-span-3">
-          <RiskReturnScatter rows={scatter} />
+      <ScoreDistribution rows={dashboard.distribution} />
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-5">
+        <div className="xl:col-span-3">
+          <CategoryOpportunityTable rows={dashboard.categories} />
         </div>
-        <div className="lg:col-span-2 h-full min-h-0">
-          <HighestPerCategory rows={highest} />
+        <div className="xl:col-span-2">
+          <ReviewCandidates rows={dashboard.candidates} />
         </div>
       </div>
     </div>

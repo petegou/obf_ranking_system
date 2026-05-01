@@ -5,8 +5,10 @@ import {
   formatRankingSlim,
 } from "./rankings-utils";
 
-// Supabase JS defaults to a 1000-row range. Bump well above current dataset (~6.6k).
+// Supabase JS defaults to a 1000-row range. Some project API settings still cap
+// single responses, so overview helpers page through rows where full coverage matters.
 const MAX_ROWS = 50000;
+const OVERVIEW_PAGE_SIZE = 1000;
 
 /**
  * Fetch categories and their fund counts for the given as-of date in a single
@@ -84,10 +86,31 @@ export async function getRankingsForCategory(
     .limit(MAX_ROWS);
   if (error) throw new Error(error.message);
 
+  const rankings = (data ?? []).map(formatRanking);
+  const tickers = rankings.map((r) => r.ticker).filter(Boolean);
+  const { data: metrics, error: metricsError } = tickers.length > 0
+    ? await supabase
+        .from("fund_metrics")
+        .select("*")
+        .eq("as_of_date", date)
+        .in("ticker", tickers)
+    : { data: [], error: null };
+  if (metricsError) throw new Error(metricsError.message);
+
+  const metricsByTicker = new Map(
+    ((metrics as Record<string, unknown>[] | null) ?? []).map((row) => [
+      String(row.ticker ?? ""),
+      row,
+    ])
+  );
+
   return {
     category,
     as_of_date: date,
-    rankings: (data ?? []).map(formatRanking),
+    rankings: rankings.map((ranking) => ({
+      ...ranking,
+      metrics: metricsByTicker.get(ranking.ticker) ?? {},
+    })),
   };
 }
 
@@ -161,6 +184,108 @@ export interface OverviewKpis {
   asOfDate: string | null;
 }
 
+export interface OverviewScoreDistribution {
+  label: string;
+  min: number | null;
+  max: number | null;
+  count: number;
+  percent: number;
+}
+
+export interface OverviewCategorySummary {
+  category: string;
+  fundCount: number;
+  avgGpaScore: number;
+  medianGpaScore: number;
+  maxGpaScore: number;
+  leaderTicker: string;
+  leaderName: string;
+  scoringSeventyOrAbove: number;
+  scoreSpread: number;
+}
+
+export interface OverviewReviewCandidate {
+  ticker: string;
+  name: string;
+  category: string;
+  totalGpaScore: number;
+  riskScore: number;
+  returnScore: number;
+  marketCapScore: number;
+  turnoverScore: number;
+  reasonLabel: string;
+}
+
+export interface OverviewDecisionDashboard {
+  distribution: OverviewScoreDistribution[];
+  categories: OverviewCategorySummary[];
+  candidates: OverviewReviewCandidate[];
+}
+
+interface OverviewRankingRow {
+  ticker: string;
+  name: string;
+  category: string;
+  totalGpaScore: number;
+  riskScore: number;
+  returnScore: number;
+  marketCapScore: number;
+  turnoverScore: number;
+}
+
+type OverviewRankingQueryRow = {
+  ticker: string;
+  total_gpa_score: number | null;
+  risk_score: number | null;
+  return_score: number | null;
+  market_cap_score: number | null;
+  turnover_score: number | null;
+  funds: { name: string; category: string } | { name: string; category: string }[] | null;
+};
+
+async function getOverviewRankingRows(
+  date: string
+): Promise<OverviewRankingRow[]> {
+  const rows: OverviewRankingRow[] = [];
+
+  for (let from = 0; ; from += OVERVIEW_PAGE_SIZE) {
+    const to = from + OVERVIEW_PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("fund_rankings")
+      .select(
+        `ticker,
+         total_gpa_score,
+         risk_score,
+         return_score,
+         market_cap_score,
+         turnover_score,
+         funds!inner(name, category)`
+      )
+      .eq("as_of_date", date)
+      .order("ticker", { ascending: true })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+
+    const page = ((data as unknown as OverviewRankingQueryRow[] | null) ?? []);
+    for (const row of page) {
+      const fund = Array.isArray(row.funds) ? row.funds[0] : row.funds;
+      if (!fund?.category) continue;
+      rows.push({
+        ticker: row.ticker,
+        name: fund.name || row.ticker,
+        category: fund.category,
+        totalGpaScore: row.total_gpa_score ?? 0,
+        riskScore: row.risk_score ?? 0,
+        returnScore: row.return_score ?? 0,
+        marketCapScore: row.market_cap_score ?? 0,
+        turnoverScore: row.turnover_score ?? 0,
+      });
+    }
+
+    if (page.length < OVERVIEW_PAGE_SIZE) return rows;
+  }
+}
+
 export async function getOverviewKpis(): Promise<OverviewKpis> {
   const date = await resolveAsOfDate(null);
   if (!date) {
@@ -173,38 +298,163 @@ export async function getOverviewKpis(): Promise<OverviewKpis> {
     };
   }
 
-  const { data, error } = await supabase
-    .from("fund_rankings")
-    .select("total_gpa_score, funds!inner(category)")
-    .eq("as_of_date", date)
-    .limit(MAX_ROWS);
-  if (error) throw new Error(error.message);
-
-  type Row = {
-    total_gpa_score: number | null;
-    funds: { category: string } | { category: string }[] | null;
-  };
-
-  const rows = ((data as unknown as Row[] | null) ?? []);
-  const total = rows.length;
+  const rows = await getOverviewRankingRows(date);
   const categories = new Set<string>();
   let scoreSum = 0;
   let scoreSeventy = 0;
 
-  for (const r of rows) {
-    const score = r.total_gpa_score ?? 0;
-    scoreSum += score;
-    if (score >= 70) scoreSeventy += 1;
-    const fund = Array.isArray(r.funds) ? r.funds[0] : r.funds;
-    if (fund?.category) categories.add(fund.category);
+  for (const row of rows) {
+    scoreSum += row.totalGpaScore;
+    if (row.totalGpaScore >= 70) scoreSeventy += 1;
+    categories.add(row.category);
   }
 
   return {
-    totalFunds: total,
+    totalFunds: rows.length,
     categoryCount: categories.size,
-    avgGpaScore: total > 0 ? scoreSum / total : 0,
-    pctScoringSeventyOrAbove: total > 0 ? (scoreSeventy / total) * 100 : 0,
+    avgGpaScore: rows.length > 0 ? scoreSum / rows.length : 0,
+    pctScoringSeventyOrAbove:
+      rows.length > 0 ? (scoreSeventy / rows.length) * 100 : 0,
     asOfDate: date,
+  };
+}
+
+function median(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const midpoint = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 1) return sorted[midpoint];
+  return (sorted[midpoint - 1] + sorted[midpoint]) / 2;
+}
+
+function buildOverviewDistribution(
+  rows: OverviewRankingRow[]
+): OverviewScoreDistribution[] {
+  const bands = [
+    { label: "80+", min: 80, max: null },
+    { label: "70-79", min: 70, max: 80 },
+    { label: "60-69", min: 60, max: 70 },
+    { label: "<60", min: null, max: 60 },
+  ];
+
+  return bands.map((band) => {
+    const count = rows.filter((row) => {
+      const aboveMin = band.min === null || row.totalGpaScore >= band.min;
+      const belowMax = band.max === null || row.totalGpaScore < band.max;
+      return aboveMin && belowMax;
+    }).length;
+
+    return {
+      ...band,
+      count,
+      percent: rows.length > 0 ? (count / rows.length) * 100 : 0,
+    };
+  });
+}
+
+function buildOverviewCategorySummaries(
+  rows: OverviewRankingRow[]
+): OverviewCategorySummary[] {
+  const rowsByCategory = new Map<string, OverviewRankingRow[]>();
+
+  for (const row of rows) {
+    const categoryRows = rowsByCategory.get(row.category) ?? [];
+    categoryRows.push(row);
+    rowsByCategory.set(row.category, categoryRows);
+  }
+
+  return Array.from(rowsByCategory.entries())
+    .map(([category, categoryRows]) => {
+      const scores = categoryRows.map((row) => row.totalGpaScore);
+      const leader = [...categoryRows].sort(
+        (a, b) => b.totalGpaScore - a.totalGpaScore
+      )[0];
+      const minScore = Math.min(...scores);
+      const maxScore = Math.max(...scores);
+
+      return {
+        category,
+        fundCount: categoryRows.length,
+        avgGpaScore:
+          scores.reduce((sum, score) => sum + score, 0) / categoryRows.length,
+        medianGpaScore: median(scores),
+        maxGpaScore: maxScore,
+        leaderTicker: leader?.ticker ?? "",
+        leaderName: leader?.name ?? "",
+        scoringSeventyOrAbove: categoryRows.filter(
+          (row) => row.totalGpaScore >= 70
+        ).length,
+        scoreSpread: maxScore - minScore,
+      };
+    })
+    .sort((a, b) => b.avgGpaScore - a.avgGpaScore);
+}
+
+function buildOverviewReviewCandidates(
+  rows: OverviewRankingRow[]
+): OverviewReviewCandidate[] {
+  const candidates = new Map<string, OverviewReviewCandidate>();
+
+  const addCandidates = (
+    reasonLabel: string,
+    rankedRows: OverviewRankingRow[],
+    limit: number
+  ) => {
+    let added = 0;
+    for (const row of rankedRows) {
+      if (candidates.has(row.ticker)) continue;
+      candidates.set(row.ticker, { ...row, reasonLabel });
+      added += 1;
+      if (added >= limit) return;
+    }
+  };
+
+  addCandidates(
+    "Highest GPA",
+    [...rows].sort((a, b) => b.totalGpaScore - a.totalGpaScore),
+    3
+  );
+  addCandidates(
+    "Return with risk support",
+    rows
+      .filter((row) => row.returnScore >= 70 && row.riskScore >= 50)
+      .sort(
+        (a, b) =>
+          b.returnScore + b.riskScore + b.totalGpaScore -
+          (a.returnScore + a.riskScore + a.totalGpaScore)
+      ),
+    3
+  );
+  addCandidates(
+    "Turnover penalty to review",
+    rows
+      .filter((row) => row.totalGpaScore >= 55 && row.turnoverScore < 0)
+      .sort((a, b) => a.turnoverScore - b.turnoverScore),
+    3
+  );
+  addCandidates(
+    "Balanced risk/return",
+    rows
+      .filter((row) => row.riskScore >= 65 && row.returnScore >= 60)
+      .sort(
+        (a, b) =>
+          b.riskScore + b.returnScore - (a.riskScore + a.returnScore)
+      ),
+    3
+  );
+
+  return Array.from(candidates.values()).slice(0, 8);
+}
+
+export async function getOverviewDecisionDashboard(): Promise<OverviewDecisionDashboard> {
+  const date = await resolveAsOfDate(null);
+  if (!date) return { distribution: [], categories: [], candidates: [] };
+  const rows = await getOverviewRankingRows(date);
+
+  return {
+    distribution: buildOverviewDistribution(rows),
+    categories: buildOverviewCategorySummaries(rows),
+    candidates: buildOverviewReviewCandidates(rows),
   };
 }
 

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const MIN_PASSWORD_LEN = 8;
@@ -36,6 +39,15 @@ export default function PasswordSetupPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
+  function submitOnEnter(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
+      return;
+    }
+
+    e.preventDefault();
+    e.currentTarget.form?.requestSubmit();
+  }
+
   // Require an active session — token-exchange happens at /auth/callback first.
   useEffect(() => {
     let cancelled = false;
@@ -54,7 +66,7 @@ export default function PasswordSetupPage() {
     };
   }, [router, supabase]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
 
@@ -84,11 +96,8 @@ export default function PasswordSetupPage() {
 
   if (!authReady) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center px-4"
-        style={{ background: "var(--background)" }}
-      >
-        <div className="text-sm" style={{ color: "var(--text-muted)" }}>
+      <div className="flex min-h-screen items-center justify-center bg-[var(--surface-base)] px-4">
+        <div className="text-sm text-[var(--text-secondary)]">
           Loading...
         </div>
       </div>
@@ -96,125 +105,114 @@ export default function PasswordSetupPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "var(--background)" }}
-    >
-      <div
-        className="w-full max-w-md rounded-xl border p-8"
-        style={{
-          backgroundColor: "var(--card-bg)",
-          borderColor: "var(--card-border)",
-        }}
-      >
-        <div className="text-center mb-8">
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "var(--accent)" }}
-          >
-            Oak Bridge
-          </h1>
-          <span
-            className="text-sm font-medium tracking-wide uppercase"
-            style={{ color: "var(--gold)" }}
-          >
-            Set Your Password
-          </span>
-        </div>
-
-        {email && (
-          <p
-            className="text-sm mb-4 text-center"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Setting password for <span style={{ color: "var(--foreground)" }}>{email}</span>
-          </p>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium mb-1.5"
-              style={{ color: "var(--foreground)" }}
-            >
-              New password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={MIN_PASSWORD_LEN}
-              autoComplete="new-password"
-              className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors"
-              style={{
-                backgroundColor: "var(--background)",
-                borderColor: "var(--card-border)",
-                color: "var(--foreground)",
-              }}
-              placeholder={`At least ${MIN_PASSWORD_LEN} characters`}
-            />
-            <p
-              className="text-xs mt-1.5"
-              style={{ color: "var(--text-muted)" }}
-            >
-              Must include uppercase, lowercase, number, and symbol.
-            </p>
-          </div>
-
-          <div>
-            <label
-              htmlFor="confirm"
-              className="block text-sm font-medium mb-1.5"
-              style={{ color: "var(--foreground)" }}
-            >
-              Confirm password
-            </label>
-            <input
-              id="confirm"
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              required
-              minLength={MIN_PASSWORD_LEN}
-              autoComplete="new-password"
-              className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors"
-              style={{
-                backgroundColor: "var(--background)",
-                borderColor: "var(--card-border)",
-                color: "var(--foreground)",
-              }}
-              placeholder="Re-enter password"
-            />
-          </div>
-
-          {error && (
-            <div
-              className="text-sm rounded-lg px-3 py-2"
-              style={{
-                backgroundColor: "rgba(220, 38, 38, 0.1)",
-                color: "#dc2626",
-              }}
-            >
-              {error}
+    <main className="min-h-screen bg-[var(--surface-base)] px-4 py-8 text-[var(--text-primary)] sm:px-6">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center justify-center">
+        <section className="grid w-full overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-sm md:grid-cols-[0.9fr_1.1fr]">
+          <div className="border-b border-[var(--border-subtle)] bg-[var(--brand-primary-tint)] p-6 md:border-b-0 md:border-r md:p-8">
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+                Oak Bridge
+              </h1>
+              <span
+                className="h-px w-6 bg-[var(--brand-gold)]"
+                aria-hidden
+              />
             </div>
-          )}
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
+              Fund Rankings
+            </p>
+            <div className="mt-8 hidden border-l-2 border-[var(--brand-gold)] pl-4 text-sm font-medium text-[var(--text-secondary)] md:block">
+              Invitation setup
+            </div>
+          </div>
 
-          <button
-            type="submit"
-            disabled={loading || done}
-            className="w-full py-2.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-50"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "#ffffff",
-            }}
-          >
-            {loading ? "Saving..." : done ? "Saved" : "Set password"}
-          </button>
-        </form>
+          <div className="p-6 sm:p-8">
+            <div className="mb-6">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--brand-primary)]">
+                Account setup
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+                Set your password
+              </h2>
+            </div>
+
+            {email && (
+              <p className="mb-4 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-2 text-sm text-[var(--text-secondary)]">
+                Setting password for{" "}
+                <span className="font-medium text-[var(--text-primary)]">
+                  {email}
+                </span>
+              </p>
+            )}
+
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-5"
+              autoComplete="off"
+            >
+              <div>
+                <label
+                  htmlFor="password"
+                  className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
+                >
+                  New password
+                </label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={submitOnEnter}
+                  required
+                  autoFocus
+                  minLength={MIN_PASSWORD_LEN}
+                  autoComplete="new-password"
+                  className="h-10 border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] placeholder:text-[var(--text-quaternary)]"
+                  placeholder={`At least ${MIN_PASSWORD_LEN} characters`}
+                />
+                <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
+                  Must include uppercase, lowercase, number, and symbol.
+                </p>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="confirm"
+                  className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
+                >
+                  Confirm password
+                </label>
+                <Input
+                  id="confirm"
+                  type="password"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  onKeyDown={submitOnEnter}
+                  required
+                  minLength={MIN_PASSWORD_LEN}
+                  autoComplete="new-password"
+                  className="h-10 border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] placeholder:text-[var(--text-quaternary)]"
+                  placeholder="Re-enter password"
+                />
+              </div>
+
+              {error && (
+                <div className="rounded-md border border-[var(--score-weak)]/20 bg-[var(--score-weak)]/10 px-3 py-2 text-sm text-[var(--score-weak)]">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading || done}
+                className="h-10 w-full bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary)]/90"
+              >
+                {loading ? "Saving..." : done ? "Saved" : "Set password"}
+              </Button>
+            </form>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

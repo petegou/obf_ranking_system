@@ -25,11 +25,32 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const themeScript = `
+    (() => {
+      const key = "obf-theme";
+      const stored = (() => {
+        try { return localStorage.getItem(key); } catch { return null; }
+      })();
+      const mode = stored === "light" || stored === "dark" || stored === "auto"
+        ? stored
+        : "auto";
+      const resolved = mode === "auto"
+        ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+        : mode;
+      document.documentElement.dataset.theme = mode;
+      document.documentElement.classList.toggle("dark", resolved === "dark");
+    })();
+  `;
+
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full bg-[var(--surface-base)] text-[var(--text-primary)]">
         {children}
       </body>

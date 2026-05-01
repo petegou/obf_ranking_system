@@ -78,11 +78,9 @@ export function RiskReturnScatter({ rows }: { rows: FundScatterRow[] }) {
         sizeKey: "marketCapScore",
         sizeName: "Market Cap",
         title: category,
-        marker: {
-          fill: colorForCategory(category, colorIndex),
-          fillOpacity: 0.65,
-          strokeWidth: 0,
-        },
+        fill: colorForCategory(category, colorIndex),
+        fillOpacity: 0.65,
+        strokeWidth: 0,
         tooltip: {
           renderer: ({ datum }: { datum: FundScatterRow }) => ({
             heading: datum.ticker,

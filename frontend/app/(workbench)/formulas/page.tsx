@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
+import { RotateCcw, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 
 interface ScoringConfig {
@@ -62,22 +64,21 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div
-      className="rounded-lg border p-6 mb-6"
-      style={{
-        backgroundColor: "var(--card-bg)",
-        borderColor: "var(--card-border)",
-      }}
-    >
-      <h2
-        className="text-lg font-semibold mb-1"
-        style={{ color: "var(--foreground)" }}
-      >
+    <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-sm">
+      <h2 className="text-base font-semibold text-[var(--text-primary)]">
         {title}
       </h2>
-      <p className="text-sm mb-5" style={{ color: "var(--text-muted)" }}>
+      <p className="mb-5 mt-1 text-sm text-[var(--text-secondary)]">
         {description}
       </p>
+      {children}
+    </section>
+  );
+}
+
+function FormulaBlock({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-5 rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-4 font-mono text-sm leading-relaxed text-[var(--text-primary)]">
       {children}
     </div>
   );
@@ -99,26 +100,18 @@ function NumberInput({
   max?: number;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-2">
-      <label
-        className="text-sm flex-1"
-        style={{ color: "var(--foreground)" }}
-      >
+    <div className="flex items-center justify-between gap-4 border-t border-[var(--border-subtle)] py-3 first:border-t-0">
+      <label className="flex-1 text-sm text-[var(--text-primary)]">
         {label}
       </label>
-      <input
+      <Input
         type="number"
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
         step={step}
         min={min}
         max={max}
-        className="w-24 px-3 py-1.5 rounded border text-sm font-mono text-right focus:outline-none focus:ring-2"
-        style={{
-          backgroundColor: "var(--background)",
-          borderColor: "var(--card-border)",
-          color: "var(--foreground)",
-        }}
+        className="h-8 w-24 border-[var(--border-default)] bg-[var(--surface-card)] text-right font-mono text-sm text-[var(--text-primary)]"
       />
     </div>
   );
@@ -134,15 +127,12 @@ function WeightSlider({
   onChange: (v: number) => void;
 }) {
   return (
-    <div className="py-2">
-      <div className="flex items-center justify-between mb-1">
-        <label className="text-sm" style={{ color: "var(--foreground)" }}>
+    <div className="border-t border-[var(--border-subtle)] py-3 first:border-t-0">
+      <div className="mb-2 flex items-center justify-between gap-4">
+        <label className="text-sm text-[var(--text-primary)]">
           {label}
         </label>
-        <span
-          className="text-sm font-mono w-12 text-right"
-          style={{ color: "var(--text-muted)" }}
-        >
+        <span className="w-12 text-right font-mono text-sm text-[var(--text-tertiary)]">
           {value.toFixed(2)}
         </span>
       </div>
@@ -153,8 +143,8 @@ function WeightSlider({
         step={0.05}
         value={value}
         onChange={(e) => onChange(parseFloat(e.target.value))}
-        className="w-full h-2 rounded-lg appearance-none cursor-pointer"
-        style={{ accentColor: "var(--accent)" }}
+        className="h-2 w-full cursor-pointer rounded-lg"
+        style={{ accentColor: "var(--brand-primary)" }}
       />
     </div>
   );
@@ -241,38 +231,20 @@ export default function FormulasPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+      <div className="mx-auto max-w-5xl px-8 py-8">
+        <p className="text-sm text-[var(--text-secondary)]">Loading...</p>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="text-sm font-medium no-underline hover:underline"
-            style={{ color: "var(--accent)" }}
-          >
-            &larr; Home
-          </Link>
-        </div>
-        <div
-          className="rounded-lg border px-6 py-8 text-center"
-          style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-          }}
-        >
-          <h2
-            className="text-xl font-semibold mb-2"
-            style={{ color: "var(--foreground)" }}
-          >
+      <div className="mx-auto max-w-5xl px-8 py-8">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] px-6 py-8 text-center shadow-sm">
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">
             Access Denied
           </h2>
-          <p style={{ color: "var(--text-muted)" }}>
+          <p className="text-sm text-[var(--text-secondary)]">
             You do not have permission to view this page. Only administrators can
             modify scoring formulas.
           </p>
@@ -283,8 +255,8 @@ export default function FormulasPage() {
 
   if (!config) {
     return (
-      <div className="max-w-5xl mx-auto px-6 py-10">
-        <p style={{ color: "var(--text-muted)" }}>
+      <div className="mx-auto max-w-5xl px-8 py-8">
+        <p className="text-sm text-[var(--text-secondary)]">
           {error ? `Error: ${error}` : "Loading configuration..."}
         </p>
       </div>
@@ -292,79 +264,48 @@ export default function FormulasPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-10">
-      <div className="mb-6">
-        <Link
-          href="/"
-          className="text-sm font-medium no-underline hover:underline"
-          style={{ color: "var(--accent)" }}
-        >
-          &larr; Home
-        </Link>
-      </div>
-
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-8 py-8">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1
-            className="text-3xl font-bold mb-1"
-            style={{ color: "var(--foreground)" }}
-          >
+          <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
             Scoring Formulas
           </h1>
-          <p style={{ color: "var(--text-muted)" }}>
+          <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
             View and adjust the parameters that drive the ranking algorithm.
             Changes recompute all rankings immediately.
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <button
+        <div className="flex shrink-0 items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
             onClick={handleReset}
             disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm font-medium border transition-colors cursor-pointer disabled:opacity-50"
-            style={{
-              borderColor: "var(--card-border)",
-              color: "var(--text-muted)",
-              backgroundColor: "var(--card-bg)",
-            }}
+            className="border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
           >
+            <RotateCcw />
             Reset Defaults
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
             onClick={handleSave}
             disabled={saving}
-            className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50"
-            style={{
-              backgroundColor: "var(--accent)",
-              color: "#ffffff",
-            }}
+            className="bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary)]/90"
           >
+            <Save />
             {saving ? "Saving..." : "Save & Rerank"}
-          </button>
+          </Button>
         </div>
-      </div>
+      </header>
 
       {saved && (
-        <div
-          className="rounded-lg border px-4 py-3 mb-6 text-sm font-medium"
-          style={{
-            backgroundColor: "#f0fdf4",
-            borderColor: "#bbf7d0",
-            color: "#16a34a",
-          }}
-        >
+        <div className="rounded-lg border border-[var(--score-strong)]/20 bg-[var(--score-strong)]/10 px-4 py-3 text-sm font-medium text-[var(--score-strong)]">
           Configuration saved. All rankings have been recomputed.
         </div>
       )}
 
       {error && (
-        <div
-          className="rounded-lg border px-4 py-3 mb-6 text-sm font-medium"
-          style={{
-            backgroundColor: "#fef2f2",
-            borderColor: "#fecaca",
-            color: "#dc2626",
-          }}
-        >
+        <div className="rounded-lg border border-[var(--score-weak)]/20 bg-[var(--score-weak)]/10 px-4 py-3 text-sm font-medium text-[var(--score-weak)]">
           {error}
         </div>
       )}
@@ -374,13 +315,7 @@ export default function FormulasPage() {
         title="Final GPA Formula"
         description="Total GPA = (Risk Score x W_risk + Return Score x W_return) / (W_risk + W_return) + Market Cap Score + Turnover Score"
       >
-        <div
-          className="rounded-lg p-4 mb-5 font-mono text-sm leading-relaxed"
-          style={{
-            backgroundColor: "var(--accent-muted)",
-            color: "var(--foreground)",
-          }}
-        >
+        <FormulaBlock>
           <p>
             GPA = (Risk x{" "}
             <strong>{config.gpa_risk_weight.toFixed(2)}</strong> + Return x{" "}
@@ -390,7 +325,7 @@ export default function FormulasPage() {
             </strong>{" "}
             + MktCap + Turnover
           </p>
-        </div>
+        </FormulaBlock>
         <NumberInput
           label="Risk weight in GPA"
           value={config.gpa_risk_weight}
@@ -412,13 +347,7 @@ export default function FormulasPage() {
         title="3-Year / 5-Year Blending"
         description="When both timeframes are available: Blended = (3yr x W_3yr) + (5yr x W_5yr). If only 3yr exists, apply a short-record penalty multiplier."
       >
-        <div
-          className="rounded-lg p-4 mb-5 font-mono text-sm leading-relaxed"
-          style={{
-            backgroundColor: "var(--accent-muted)",
-            color: "var(--foreground)",
-          }}
-        >
+        <FormulaBlock>
           <p>
             Blended = 3yr x{" "}
             <strong>{config.blend_weight_3yr.toFixed(2)}</strong> + 5yr x{" "}
@@ -428,7 +357,7 @@ export default function FormulasPage() {
             3yr-only penalty: x{" "}
             <strong>{config.short_record_penalty.toFixed(2)}</strong>
           </p>
-        </div>
+        </FormulaBlock>
         <NumberInput
           label="3-Year weight"
           value={config.blend_weight_3yr}
@@ -457,15 +386,9 @@ export default function FormulasPage() {
         title="Risk Score Weights"
         description="Risk Score = weighted average of 12 normalized sub-components. Adjust each metric's importance (0 = excluded, 1 = normal, >1 = amplified)."
       >
-        <div
-          className="rounded-lg p-4 mb-5 font-mono text-sm"
-          style={{
-            backgroundColor: "var(--accent-muted)",
-            color: "var(--foreground)",
-          }}
-        >
+        <FormulaBlock>
           Risk Score = SUM(metric_i x weight_i) / SUM(weight_i)
-        </div>
+        </FormulaBlock>
         {Object.entries(config.risk_weights).map(([key, val]) => (
           <WeightSlider
             key={key}
@@ -481,15 +404,9 @@ export default function FormulasPage() {
         title="Return Score Weights"
         description="Return Score = weighted average of 5 normalized sub-components."
       >
-        <div
-          className="rounded-lg p-4 mb-5 font-mono text-sm"
-          style={{
-            backgroundColor: "var(--accent-muted)",
-            color: "var(--foreground)",
-          }}
-        >
+        <FormulaBlock>
           Return Score = SUM(component_i x weight_i) / SUM(weight_i)
-        </div>
+        </FormulaBlock>
         {Object.entries(config.return_weights).map(([key, val]) => (
           <WeightSlider
             key={key}
@@ -520,16 +437,10 @@ export default function FormulasPage() {
         title="Market Cap Score"
         description="Bonus score based on assets under management."
       >
-        <div
-          className="rounded-lg p-4 mb-5 font-mono text-sm"
-          style={{
-            backgroundColor: "var(--accent-muted)",
-            color: "var(--foreground)",
-          }}
-        >
+        <FormulaBlock>
           Market Cap Score = AUM /{" "}
           <strong>{config.market_cap_divisor.toFixed(0)}</strong>
-        </div>
+        </FormulaBlock>
         <NumberInput
           label="AUM divisor"
           value={config.market_cap_divisor}
@@ -544,13 +455,7 @@ export default function FormulasPage() {
         title="Turnover Score"
         description="Penalty for high-turnover funds."
       >
-        <div
-          className="rounded-lg p-4 mb-5 font-mono text-sm leading-relaxed"
-          style={{
-            backgroundColor: "var(--accent-muted)",
-            color: "var(--foreground)",
-          }}
-        >
+        <FormulaBlock>
           <p>
             if turnover &le;{" "}
             <strong>{config.turnover_threshold.toFixed(0)}%</strong> &rarr; 0
@@ -559,7 +464,7 @@ export default function FormulasPage() {
             else &rarr; turnover /{" "}
             <strong>{config.turnover_divisor.toFixed(1)}</strong>
           </p>
-        </div>
+        </FormulaBlock>
         <NumberInput
           label="Threshold (%)"
           value={config.turnover_threshold}

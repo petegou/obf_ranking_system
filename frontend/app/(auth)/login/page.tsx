@@ -1,7 +1,10 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -32,7 +35,16 @@ function LoginPageInner() {
 
   const supabase = createSupabaseBrowserClient();
 
-  async function handleSignIn(e: React.FormEvent) {
+  function submitOnEnter(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.key !== "Enter" || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
+      return;
+    }
+
+    e.preventDefault();
+    e.currentTarget.form?.requestSubmit();
+  }
+
+  async function handleSignIn(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -53,7 +65,7 @@ function LoginPageInner() {
     router.refresh();
   }
 
-  async function handleSendReset(e: React.FormEvent) {
+  async function handleSendReset(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
@@ -66,150 +78,130 @@ function LoginPageInner() {
   }
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4"
-      style={{ background: "var(--background)" }}
-    >
-      <div
-        className="w-full max-w-md rounded-xl border p-8"
-        style={{
-          backgroundColor: "var(--card-bg)",
-          borderColor: "var(--card-border)",
-        }}
-      >
-        <div className="text-center mb-8">
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ color: "var(--accent)" }}
-          >
-            Oak Bridge
-          </h1>
-          <span
-            className="text-sm font-medium tracking-wide uppercase"
-            style={{ color: "var(--gold)" }}
-          >
-            Fund Rankings
-          </span>
-        </div>
-
-        {resetSent ? (
-          <div
-            className="text-sm rounded-lg px-3 py-3 text-center"
-            style={{
-              backgroundColor: "var(--accent-muted)",
-              color: "var(--foreground)",
-            }}
-          >
-            If an account exists for that email, a password reset link has been sent.
-          </div>
-        ) : (
-          <form
-            onSubmit={resetMode ? handleSendReset : handleSignIn}
-            className="space-y-5"
-          >
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium mb-1.5"
-                style={{ color: "var(--foreground)" }}
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors"
-                style={{
-                  backgroundColor: "var(--background)",
-                  borderColor: "var(--card-border)",
-                  color: "var(--foreground)",
-                }}
-                placeholder="you@example.com"
+    <main className="min-h-screen bg-[var(--surface-base)] px-4 py-8 text-[var(--text-primary)] sm:px-6">
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center justify-center">
+        <section className="grid w-full overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-sm md:grid-cols-[0.9fr_1.1fr]">
+          <div className="border-b border-[var(--border-subtle)] bg-[var(--brand-primary-tint)] p-6 md:border-b-0 md:border-r md:p-8">
+            <div className="flex items-baseline gap-2">
+              <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+                Oak Bridge
+              </h1>
+              <span
+                className="h-px w-6 bg-[var(--brand-gold)]"
+                aria-hidden
               />
             </div>
+            <p className="mt-1 text-[10px] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">
+              Fund Rankings
+            </p>
+            <div className="mt-8 hidden border-l-2 border-[var(--brand-gold)] pl-4 text-sm font-medium text-[var(--text-secondary)] md:block">
+              Private workspace
+            </div>
+          </div>
 
-            {!resetMode && (
-              <div>
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium mb-1.5"
-                  style={{ color: "var(--foreground)" }}
-                >
-                  Password
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  autoComplete="current-password"
-                  className="w-full px-3 py-2 rounded-lg border text-sm outline-none transition-colors"
-                  style={{
-                    backgroundColor: "var(--background)",
-                    borderColor: "var(--card-border)",
-                    color: "var(--foreground)",
-                  }}
-                  placeholder="Enter your password"
-                />
+          <div className="p-6 sm:p-8">
+            <div className="mb-6">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--brand-primary)]">
+                Secure access
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+                {resetMode ? "Reset password" : "Sign in"}
+              </h2>
+            </div>
+
+            {resetSent ? (
+              <div className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] px-3 py-3 text-sm leading-6 text-[var(--text-secondary)]">
+                If an account exists for that email, a password reset link has
+                been sent.
               </div>
-            )}
-
-            {error && (
-              <div
-                className="text-sm rounded-lg px-3 py-2"
-                style={{
-                  backgroundColor: "rgba(220, 38, 38, 0.1)",
-                  color: "#dc2626",
-                }}
+            ) : (
+              <form
+                onSubmit={resetMode ? handleSendReset : handleSignIn}
+                className="space-y-5"
               >
-                {error}
-              </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
+                  >
+                    Email
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onKeyDown={submitOnEnter}
+                    required
+                    autoFocus
+                    autoComplete="email"
+                    className="h-10 border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] placeholder:text-[var(--text-quaternary)]"
+                    placeholder="name@oakbridgefund.com"
+                  />
+                </div>
+
+                {!resetMode && (
+                  <div>
+                    <label
+                      htmlFor="password"
+                      className="mb-1.5 block text-sm font-medium text-[var(--text-primary)]"
+                    >
+                      Password
+                    </label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onKeyDown={submitOnEnter}
+                      required
+                      autoComplete="current-password"
+                      className="h-10 border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)] placeholder:text-[var(--text-quaternary)]"
+                      placeholder="Enter your password"
+                    />
+                  </div>
+                )}
+
+                {error && (
+                  <div className="rounded-md border border-[var(--score-weak)]/20 bg-[var(--score-weak)]/10 px-3 py-2 text-sm text-[var(--score-weak)]">
+                    {error}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="h-10 w-full bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary)]/90"
+                >
+                  {loading
+                    ? resetMode
+                      ? "Sending..."
+                      : "Signing in..."
+                    : resetMode
+                    ? "Send reset link"
+                    : "Sign in"}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setError(null);
+                    setResetMode(!resetMode);
+                  }}
+                  className="h-8 w-full text-xs text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+                >
+                  {resetMode ? "Back to sign in" : "Forgot password?"}
+                </Button>
+              </form>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold transition-opacity disabled:opacity-50"
-              style={{
-                backgroundColor: "var(--accent)",
-                color: "#ffffff",
-              }}
-            >
-              {loading
-                ? resetMode
-                  ? "Sending..."
-                  : "Signing in..."
-                : resetMode
-                ? "Send reset link"
-                : "Sign In"}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setError(null);
-                setResetMode(!resetMode);
-              }}
-              className="w-full text-xs underline transition-colors"
-              style={{ color: "var(--text-muted)" }}
-            >
-              {resetMode ? "Back to sign in" : "Forgot password?"}
-            </button>
-          </form>
-        )}
-
-        <p
-          className="text-xs text-center mt-6"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Access is by invitation only. Contact your administrator.
-        </p>
+            <p className="mt-6 text-center text-xs text-[var(--text-tertiary)]">
+              Access is by invitation only. Contact your administrator.
+            </p>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -3,26 +3,56 @@
 import "@/lib/ag-charts-setup";
 import { AgCharts } from "ag-charts-react";
 import type { AgCartesianChartOptions } from "ag-charts-community";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { RankingRow } from "@/components/workbench/rankings-grid";
 import { useIsDarkMode } from "@/lib/use-color-scheme";
 import { SELECTION_COLORS } from "@/lib/selection-colors";
 
-function computeFrontier(rows: RankingRow[]): { x: number; y: number }[] {
-  const sorted = [...rows].sort((a, b) =>
-    a.riskScore !== b.riskScore
-      ? a.riskScore - b.riskScore
-      : b.returnScore - a.returnScore
-  );
-  const frontier: { x: number; y: number }[] = [];
-  let maxReturn = -Infinity;
-  for (const row of sorted) {
-    if (row.returnScore > maxReturn) {
-      maxReturn = row.returnScore;
-      frontier.push({ x: row.riskScore, y: row.returnScore });
-    }
+type EfficiencyView = "3yr" | "5yr";
+type EfficiencyPoint = {
+  ticker: string;
+  name: string;
+  efficiencyRisk: number;
+  efficiencyReturn: number;
+};
+
+const VIEW_CONFIG = {
+  "3yr": {
+    label: "3Y",
+    riskKey: "stdDev3yr",
+    returnKey: "return3yr",
+    xTitle: "3Y Standard Deviation",
+    yTitle: "3Y Return",
+  },
+  "5yr": {
+    label: "5Y",
+    riskKey: "stdDev5yr",
+    returnKey: "return5yr",
+    xTitle: "5Y Standard Deviation",
+    yTitle: "5Y Return",
+  },
+} satisfies Record<
+  EfficiencyView,
+  {
+    label: string;
+    riskKey: keyof RankingRow;
+    returnKey: keyof RankingRow;
+    xTitle: string;
+    yTitle: string;
   }
-  return frontier;
+>;
+
+function buildEfficiencyPoints(
+  rows: RankingRow[],
+  view: EfficiencyView
+): EfficiencyPoint[] {
+  const config = VIEW_CONFIG[view];
+  return rows.flatMap((row) => {
+    const risk = row[config.riskKey];
+    const fundReturn = row[config.returnKey];
+    if (typeof risk !== "number" || typeof fundReturn !== "number") return [];
+    return [{ ticker: row.ticker, name: row.name, efficiencyRisk: risk, efficiencyReturn: fundReturn }];
+  });
 }
 
 export function CategoryScatterChart({
@@ -33,35 +63,48 @@ export function CategoryScatterChart({
   selectedTickers: string[];
 }) {
   const isDark = useIsDarkMode();
+  const [view, setView] = useState<EfficiencyView>("3yr");
+  const viewConfig = VIEW_CONFIG[view];
   const labelColor = isDark ? "#a3a3a3" : "#737373";
-  const bgDot = isDark ? "#404040" : "#d4d4d4";
-  const frontierStroke = isDark ? "#4a8fd4" : "#0d1f33";
+  const gridColor = isDark ? "#374151" : "#d4d4d4";
+  const bgDot = isDark ? "#9ca3af" : "#525252";
+  const bgDotStroke = isDark ? "#d1d5db" : "#171717";
+  const selectedStroke = isDark ? "#dbeafe" : "#0f172a";
 
   const selectedSet = useMemo(
     () => new Set(selectedTickers),
     [selectedTickers]
   );
 
-  const frontier = useMemo(() => computeFrontier(rows), [rows]);
+  const points = useMemo(() => buildEfficiencyPoints(rows, view), [rows, view]);
 
   const options = useMemo<AgCartesianChartOptions>(() => {
-    const backgroundData = rows.filter((r) => !selectedSet.has(r.ticker));
+    const byTicker = new Map<string, EfficiencyPoint[]>();
+    const backgroundData: EfficiencyPoint[] = [];
+    for (const point of points) {
+      if (selectedSet.has(point.ticker)) {
+        const bucket = byTicker.get(point.ticker) ?? [];
+        bucket.push(point);
+        byTicker.set(point.ticker, bucket);
+      } else {
+        backgroundData.push(point);
+      }
+    }
 
     const selectedSeries = selectedTickers.map((ticker, i) => ({
       type: "scatter" as const,
-      data: rows.filter((r) => r.ticker === ticker),
-      xKey: "riskScore",
-      yKey: "returnScore",
+      data: byTicker.get(ticker) ?? [],
+      xKey: "efficiencyRisk",
+      yKey: "efficiencyReturn",
       title: ticker,
-      marker: {
-        fill: SELECTION_COLORS[i % SELECTION_COLORS.length],
-        size: 9,
-        strokeWidth: 0,
-      },
+      fill: SELECTION_COLORS[i % SELECTION_COLORS.length],
+      size: 11,
+      stroke: selectedStroke,
+      strokeWidth: 1.5,
       tooltip: {
-        renderer: ({ datum }: { datum: RankingRow }) => ({
+        renderer: ({ datum }: { datum: EfficiencyPoint }) => ({
           heading: datum.ticker,
-          content: `${datum.name}<br/>Risk ${datum.riskScore.toFixed(1)} · Return ${datum.returnScore.toFixed(1)}`,
+          content: `${datum.name}<br/>Std Dev ${datum.efficiencyRisk.toFixed(2)}% · Return ${datum.efficiencyReturn.toFixed(2)}%`,
         }),
       },
     }));
@@ -69,67 +112,76 @@ export function CategoryScatterChart({
     return {
       theme: isDark ? "ag-default-dark" : "ag-default",
       background: { fill: "transparent" },
+      padding: { top: 8, right: 8, bottom: 0, left: 0 },
       legend: {
         position: "bottom",
+        spacing: 8,
         item: { label: { color: labelColor } },
       },
       series: [
         {
           type: "scatter",
           data: backgroundData,
-          xKey: "riskScore",
-          yKey: "returnScore",
+          xKey: "efficiencyRisk",
+          yKey: "efficiencyReturn",
           title: "Category funds",
-          marker: {
-            fill: bgDot,
-            size: 5,
-            strokeWidth: 0,
-            fillOpacity: 0.5,
-          },
+          fill: bgDot,
+          stroke: bgDotStroke,
+          strokeWidth: 1,
+          size: 6,
+          fillOpacity: isDark ? 0.78 : 0.58,
+          strokeOpacity: isDark ? 0.35 : 0.18,
           tooltip: {
-            renderer: ({ datum }: { datum: RankingRow }) => ({
+            renderer: ({ datum }: { datum: EfficiencyPoint }) => ({
               heading: datum.ticker,
-              content: `Risk ${datum.riskScore.toFixed(1)} · Return ${datum.returnScore.toFixed(1)}`,
+              content: `Std Dev ${datum.efficiencyRisk.toFixed(2)}% · Return ${datum.efficiencyReturn.toFixed(2)}%`,
             }),
           },
         },
         ...selectedSeries,
-        {
-          type: "line",
-          data: frontier,
-          xKey: "x",
-          yKey: "y",
-          title: "Frontier",
-          stroke: frontierStroke,
-          strokeWidth: 2,
-          strokeOpacity: 0.5,
-          marker: { enabled: false },
-        },
       ],
       axes: {
         x: {
           type: "number",
           position: "bottom",
-          title: { text: "Risk Score", color: labelColor },
-          label: { color: labelColor },
-          min: 0,
-          max: 100,
+          title: { text: viewConfig.xTitle, color: labelColor },
+          label: { color: labelColor, fontSize: 11 },
+          gridStyle: [{ stroke: gridColor, lineDash: [2, 4] }],
         },
         y: {
           type: "number",
           position: "left",
-          title: { text: "Return Score", color: labelColor },
-          label: { color: labelColor },
-          min: 0,
-          max: 100,
+          title: { text: viewConfig.yTitle, color: labelColor },
+          label: { color: labelColor, fontSize: 11 },
+          gridStyle: [{ stroke: gridColor, lineDash: [2, 4] }],
         },
       },
     };
-  }, [rows, selectedTickers, selectedSet, frontier, isDark, labelColor, bgDot, frontierStroke]);
+  }, [points, selectedTickers, selectedSet, isDark, labelColor, gridColor, bgDot, bgDotStroke, selectedStroke, viewConfig]);
 
   return (
-    <div className="h-[280px]">
-      <AgCharts options={options} />
+    <div>
+      <div className="mb-3 flex justify-end">
+        <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-0.5">
+          {(["3yr", "5yr"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => setView(option)}
+              className={`h-7 rounded px-3 text-xs font-medium ${
+                view === option
+                  ? "bg-[var(--surface-card)] text-[var(--text-primary)] shadow-sm"
+                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {VIEW_CONFIG[option].label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="h-[300px]">
+        <AgCharts options={options} />
+      </div>
     </div>
   );
 }

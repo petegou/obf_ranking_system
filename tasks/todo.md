@@ -1,5 +1,34 @@
 # Phase 1 Dashboard Redesign — Todo
 
+## Active — Overview Decision Dashboard
+- [x] Add overview summary helpers for score bands, category opportunity, and review candidates.
+- [x] Replace the overview scatter/list layout with decision dashboard panels.
+- [x] Verify lint, typecheck, build, and browser smoke checks.
+
+Verification:
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Browser checked authenticated overview at `localhost:3001` in light and dark themes.
+- Verified overview fund link routing to `/categories/US%20Large%20Cap%20Growth?fund=SPYG`.
+- Fixed overview row fetching to page through Supabase's 1,000-row response cap; browser confirmed 6,551 funds and 65 categories on 04/28/2026.
+
+## Completed — Category Grid Full Dataset Columns
+- [x] Expand category rankings with available score breakdown and raw metric fields.
+- [x] Add a community-compatible column chooser with explicit Save behavior.
+- [x] Re-run lint, typecheck, and build verification.
+- [x] Restore row click fund selection after the AG Grid row selection API change.
+- [x] Update efficiency curve to plot 3Y/5Y standard deviation against matching returns.
+- [x] Add multi-fund detail tabs for All comparison and individual fund detail views.
+- [x] Add sidebar account menu with theme selector, admin links, and logout.
+- [x] Complete app-wide Light/Dark/Auto theme integration across shell, shadcn tokens, AG Grid, and AG Charts.
+- [x] Add durable user column presets for the category table.
+  - [x] Add Supabase migration with private per-user RLS.
+  - [x] Add authenticated preset API routes.
+  - [x] Refactor category table columns to stable preset IDs.
+  - [x] Extend the current column popup with preset management.
+  - [x] Run typecheck, lint, and build verification.
+
 > Detailed plan: `docs/superpowers/plans/2026-04-29-dashboard-ui-redesign.md`
 > Spec: `docs/superpowers/specs/2026-04-29-dashboard-ui-design.md`
 > Each item below is one task in the plan; check off as completed.

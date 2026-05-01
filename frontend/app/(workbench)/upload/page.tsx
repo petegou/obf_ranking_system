@@ -1,7 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState, useRef } from "react";
+import { Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
 
 interface FileResult {
@@ -69,38 +71,20 @@ export default function UploadPage() {
 
   if (authLoading) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <p style={{ color: "var(--text-muted)" }}>Loading...</p>
+      <div className="mx-auto max-w-5xl px-8 py-8">
+        <p className="text-sm text-[var(--text-secondary)]">Loading...</p>
       </div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-10">
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="text-sm font-medium no-underline hover:underline"
-            style={{ color: "var(--accent)" }}
-          >
-            &larr; Home
-          </Link>
-        </div>
-        <div
-          className="rounded-lg border px-6 py-8 text-center"
-          style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-          }}
-        >
-          <h2
-            className="text-xl font-semibold mb-2"
-            style={{ color: "var(--foreground)" }}
-          >
+      <div className="mx-auto max-w-5xl px-8 py-8">
+        <div className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] px-6 py-8 text-center shadow-sm">
+          <h2 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">
             Access Denied
           </h2>
-          <p style={{ color: "var(--text-muted)" }}>
+          <p className="text-sm text-[var(--text-secondary)]">
             You do not have permission to view this page. Only administrators can
             upload data.
           </p>
@@ -110,141 +94,110 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-10">
-      <div className="mb-6">
-        <Link
-          href="/"
-          className="text-sm font-medium no-underline hover:underline"
-          style={{ color: "var(--accent)" }}
-        >
-          &larr; Home
-        </Link>
-      </div>
+    <div className="mx-auto flex max-w-5xl flex-col gap-6 px-8 py-8">
+      <header>
+        <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
+          Upload Data
+        </h1>
+        <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
+          Import YCharts comp_table CSV exports for a selected data date.
+        </p>
+      </header>
 
-      <h1
-        className="text-3xl font-bold mb-1"
-        style={{ color: "var(--foreground)" }}
-      >
-        Upload Data
-      </h1>
-      <p className="mb-8" style={{ color: "var(--text-muted)" }}>
-        Import YCharts comp_table CSV exports. Upload all 3 files at once for a
-        given data date.
-      </p>
-
-      <div
-        className="rounded-lg border p-6 mb-6 space-y-5"
-        style={{
-          backgroundColor: "var(--card-bg)",
-          borderColor: "var(--card-border)",
-        }}
-      >
-        {/* Date picker */}
-        <div>
-          <label
-            className="block text-sm font-medium mb-2"
-            style={{ color: "var(--foreground)" }}
-          >
-            Data Date <span style={{ color: "#dc2626" }}>*</span>
-          </label>
-          <input
-            type="date"
-            value={asOfDate}
-            onChange={(e) => setAsOfDate(e.target.value)}
-            className="rounded-lg border px-3 py-2 text-sm"
-            style={{
-              backgroundColor: "var(--card-bg)",
-              borderColor: "var(--card-border)",
-              color: "var(--foreground)",
-            }}
-          />
-          <p className="mt-1 text-xs" style={{ color: "var(--text-muted)" }}>
-            The date this data represents (matches the date in the filename).
+      <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-sm">
+        <div className="mb-5 border-b border-[var(--border-subtle)] pb-4">
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">
+            Import files
+          </h2>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            Upload all three CSV files together so the rankings share the same
+            as-of date.
           </p>
         </div>
 
-        {/* File picker */}
-        <div>
-          <label
-            className="block text-sm font-medium mb-2"
-            style={{ color: "var(--foreground)" }}
-          >
-            CSV Files <span style={{ color: "#dc2626" }}>*</span>
+        <div className="grid gap-5 sm:grid-cols-[220px_1fr]">
+          <label className="text-sm font-medium text-[var(--text-primary)]">
+            Data Date <span className="text-[var(--score-weak)]">*</span>
           </label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            multiple
-            onChange={(e) => {
-              setFiles(Array.from(e.target.files ?? []));
-              setResult(null);
-              setError(null);
-            }}
-            className="text-sm"
-            style={{ color: "var(--foreground)" }}
-          />
-          {files.length > 0 && (
-            <ul className="mt-2 space-y-1">
-              {files.map((f) => (
-                <li key={f.name} className="text-sm" style={{ color: "var(--text-muted)" }}>
-                  {f.name} ({(f.size / 1024).toFixed(1)} KB)
-                </li>
-              ))}
-            </ul>
-          )}
+          <div>
+            <Input
+              type="date"
+              value={asOfDate}
+              onChange={(e) => setAsOfDate(e.target.value)}
+              className="h-9 w-fit min-w-44 border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-primary)]"
+            />
+            <p className="mt-1.5 text-xs text-[var(--text-tertiary)]">
+              The date this data represents, matching the date in the filename.
+            </p>
+          </div>
+
+          <label className="text-sm font-medium text-[var(--text-primary)]">
+            CSV Files <span className="text-[var(--score-weak)]">*</span>
+          </label>
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              multiple
+              onChange={(e) => {
+                setFiles(Array.from(e.target.files ?? []));
+                setResult(null);
+                setError(null);
+              }}
+              className="block w-full rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] px-2.5 py-2 text-sm text-[var(--text-primary)] file:mr-3 file:rounded-md file:border-0 file:bg-[var(--surface-muted)] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[var(--text-primary)]"
+            />
+            {files.length > 0 && (
+              <ul className="mt-3 divide-y divide-[var(--border-subtle)] rounded-md border border-[var(--border-subtle)]">
+                {files.map((f) => (
+                  <li
+                    key={f.name}
+                    className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                  >
+                    <span className="min-w-0 truncate text-[var(--text-primary)]">
+                      {f.name}
+                    </span>
+                    <span className="shrink-0 font-mono text-xs text-[var(--text-tertiary)]">
+                      {(f.size / 1024).toFixed(1)} KB
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
-        <button
+        <Button
           onClick={handleUpload}
           disabled={files.length === 0 || !asOfDate || uploading}
-          className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            backgroundColor: "var(--accent)",
-            color: "#ffffff",
-          }}
+          className="mt-6 bg-[var(--brand-primary)] text-white hover:bg-[var(--brand-primary)]/90"
         >
+          <Upload />
           {uploading
             ? `Uploading ${files.length} file${files.length === 1 ? "" : "s"}...`
             : files.length > 0
               ? `Upload ${files.length} File${files.length === 1 ? "" : "s"}`
               : "Upload Files"}
-        </button>
-      </div>
+        </Button>
+      </section>
 
       {error && (
-        <div
-          className="rounded-lg border px-4 py-3 mb-6 text-sm font-medium"
-          style={{
-            backgroundColor: "#fef2f2",
-            borderColor: "#fecaca",
-            color: "#dc2626",
-          }}
-        >
+        <div className="rounded-lg border border-[var(--score-weak)]/20 bg-[var(--score-weak)]/10 px-4 py-3 text-sm font-medium text-[var(--score-weak)]">
           {error}
         </div>
       )}
 
       {result && (
-        <div
-          className="rounded-lg border p-6"
-          style={{
-            backgroundColor: "var(--card-bg)",
-            borderColor: "var(--card-border)",
-          }}
-        >
-          <h2
-            className="text-lg font-semibold mb-1"
-            style={{ color: "var(--foreground)" }}
-          >
+        <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-6 shadow-sm">
+          <h2 className="text-base font-semibold text-[var(--text-primary)]">
             Upload Results
           </h2>
-          <p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+          <p className="mb-4 mt-1 text-sm text-[var(--text-secondary)]">
             Data date: {result.as_of_date}
           </p>
 
           {/* Totals */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
             {[
               { label: "Total Rows", value: result.rows_total },
               { label: "Upserted",   value: result.rows_upserted },
@@ -252,13 +205,12 @@ export default function UploadPage() {
             ].map((item) => (
               <div
                 key={item.label}
-                className="rounded-lg p-3 text-center"
-                style={{ backgroundColor: "var(--accent-muted)" }}
+                className="rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-3 text-center"
               >
-                <p className="text-2xl font-bold" style={{ color: "var(--foreground)" }}>
+                <p className="text-2xl font-semibold tabular-nums text-[var(--text-primary)]">
                   {item.value}
                 </p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+                <p className="text-xs text-[var(--text-tertiary)]">
                   {item.label}
                 </p>
               </div>
@@ -268,20 +220,19 @@ export default function UploadPage() {
           {/* Per-file breakdown */}
           {result.files.length > 1 && (
             <div className="mb-4 space-y-2">
-              <h3 className="text-sm font-semibold" style={{ color: "var(--foreground)" }}>
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">
                 Per File
               </h3>
               {result.files.map((f) => (
                 <div
                   key={f.filename}
-                  className="rounded-lg border px-4 py-3 text-sm flex flex-wrap gap-4 items-center"
-                  style={{ borderColor: "var(--card-border)" }}
+                  className="flex flex-wrap items-center gap-4 rounded-md border border-[var(--border-subtle)] px-4 py-3 text-sm"
                 >
-                  <span className="font-medium flex-1" style={{ color: "var(--foreground)" }}>
+                  <span className="min-w-0 flex-1 truncate font-medium text-[var(--text-primary)]">
                     {f.filename}
                   </span>
-                  <span style={{ color: "var(--text-muted)" }}>
-                    {f.rows_upserted} upserted · {f.rows_skipped} skipped
+                  <span className="text-[var(--text-secondary)]">
+                    {f.rows_upserted} upserted / {f.rows_skipped} skipped
                   </span>
                 </div>
               ))}
@@ -291,20 +242,17 @@ export default function UploadPage() {
           {/* Errors */}
           {result.errors.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold mb-2" style={{ color: "#dc2626" }}>
+              <h3 className="mb-2 text-sm font-semibold text-[var(--score-weak)]">
                 Errors ({result.errors.length})
               </h3>
-              <ul
-                className="text-sm space-y-1 list-disc list-inside"
-                style={{ color: "#dc2626" }}
-              >
+              <ul className="list-inside list-disc space-y-1 text-sm text-[var(--score-weak)]">
                 {result.errors.map((err, i) => (
                   <li key={i}>{err}</li>
                 ))}
               </ul>
             </div>
           )}
-        </div>
+        </section>
       )}
     </div>
   );
