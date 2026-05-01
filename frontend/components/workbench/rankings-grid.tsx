@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AgGridReact } from 'ag-grid-react';
-import { Check, Columns3, RotateCcw, Star, Trash2, X } from 'lucide-react';
+import { Check, Columns3, RotateCcw, Search, Star, Trash2, X } from 'lucide-react';
 import type {
   ColDef,
   ColGroupDef,
@@ -475,6 +475,7 @@ export function RankingsGrid({
   const [presets, setPresets] = useState<ColumnPreset[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   const [presetName, setPresetName] = useState('');
+  const [columnSearchQuery, setColumnSearchQuery] = useState('');
   const [presetError, setPresetError] = useState<string | null>(null);
   const [isLoadingPresets, setIsLoadingPresets] = useState(true);
   const [isSavingPreset, setIsSavingPreset] = useState(false);
@@ -482,6 +483,30 @@ export function RankingsGrid({
   const replaceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedPreset =
     presets.find((preset) => preset.id === selectedPresetId) ?? null;
+  const filteredColumnGroups = useMemo(() => {
+    const query = columnSearchQuery.trim().toLowerCase();
+    if (!query) return COLUMN_CHOOSER_GROUPS;
+
+    return COLUMN_CHOOSER_GROUPS.map((group) => {
+      const groupMatches = group.group.toLowerCase().includes(query);
+      const columns = groupMatches
+        ? group.columns
+        : group.columns.filter((column) =>
+            [
+              column.label,
+              column.field,
+              column.columnId,
+              group.group,
+            ].some((value) => value.toLowerCase().includes(query)),
+          );
+
+      return columns.length > 0 ? { ...group, columns } : null;
+    }).filter((group): group is ColumnChoiceGroup => group !== null);
+  }, [columnSearchQuery]);
+  const filteredColumnCount = filteredColumnGroups.reduce(
+    (count, group) => count + group.columns.length,
+    0,
+  );
 
   const columns = useMemo<
     (ColDef<RankingRow> | ColGroupDef<RankingRow>)[]
@@ -1049,6 +1074,7 @@ export function RankingsGrid({
 
   function openColumnChooser() {
     setDraftVisibleColumnIds(new Set(visibleColumnIds));
+    setColumnSearchQuery('');
     setPresetError(null);
     setIsColumnChooserOpen(true);
   }
@@ -1365,8 +1391,39 @@ export function RankingsGrid({
               </div>
             ) : null}
           </div>
+          <div className="border-b border-[var(--border-subtle)] p-3">
+            <div className="relative">
+              <Search
+                className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-tertiary)]"
+                aria-hidden="true"
+              />
+              <input
+                type="search"
+                value={columnSearchQuery}
+                onChange={(event) => setColumnSearchQuery(event.target.value)}
+                placeholder="Search columns..."
+                className="h-8 w-full rounded border border-[var(--border-default)] bg-[var(--surface-card)] pl-8 pr-8 text-xs text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)]"
+              />
+              {columnSearchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setColumnSearchQuery('')}
+                  className="absolute right-1 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded text-[var(--text-tertiary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+                  aria-label="Clear column search">
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+            <div className="mt-1.5 text-[11px] text-[var(--text-tertiary)]">
+              {columnSearchQuery
+                ? `${filteredColumnCount} matching column${
+                    filteredColumnCount === 1 ? '' : 's'
+                  }`
+                : `${ALL_COLUMNS.length} columns available`}
+            </div>
+          </div>
           <div className="max-h-[420px] overflow-y-auto p-3">
-            {COLUMN_CHOOSER_GROUPS.map((group) => (
+            {filteredColumnGroups.map((group) => (
               <fieldset key={group.group} className="mb-4 last:mb-0">
                 <legend className="mb-2 flex w-full items-center gap-2 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
                   <span className="min-w-0 flex-1 truncate">{group.group}</span>
@@ -1400,6 +1457,11 @@ export function RankingsGrid({
                 </div>
               </fieldset>
             ))}
+            {filteredColumnGroups.length === 0 ? (
+              <div className="py-8 text-center text-sm text-[var(--text-tertiary)]">
+                No columns match your search.
+              </div>
+            ) : null}
           </div>
           <div className="flex h-12 items-center justify-between border-t border-[var(--border-subtle)] px-3">
             <button
