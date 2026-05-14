@@ -79,7 +79,7 @@ export function FundComparisonChart({
           min: 0,
           max: 100,
           label: { color: labelColor, fontSize: 11 },
-          gridStyle: [{ stroke: gridColor, lineDash: [2, 4] }],
+          gridLine: { style: [{ stroke: gridColor, lineDash: [2, 4] }] },
         },
       },
     };

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { ScoreBar } from "@/components/score-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getFundDetail, getFundPeerStats, type FundPeerStats } from "@/lib/queries";
@@ -6,7 +5,6 @@ import { scoreColorVar } from "@/lib/score-color";
 import { MarketDataPlaceholder } from "./market-data-placeholder";
 import { PeerComparisonChart } from "./peer-comparison-chart";
 import { CategoryScatterChart } from "./category-scatter";
-import { FundComparisonChart } from "./fund-comparison-chart";
 import type { RankingRow } from "./rankings-grid";
 
 type FundDetail = NonNullable<Awaited<ReturnType<typeof getFundDetail>>>;
@@ -57,12 +55,6 @@ export async function FundDetailPanel({
               </p>
             </header>
             <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
-              <h3 className="mb-2 text-xs font-semibold text-[var(--text-secondary)]">
-                Score profile
-              </h3>
-              <FundComparisonChart rows={rows} selectedTickers={tickers} />
-            </section>
-            <section className="mt-4 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
               <h3 className="text-xs font-semibold text-[var(--text-secondary)]">
                 Efficiency curve
               </h3>
@@ -161,17 +153,52 @@ function SingleFundDetail({
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="mt-4 space-y-2">
-          <ScoreBar label="Risk" value={fund.risk_score ?? 0} />
-          <ScoreBar label="Return" value={fund.return_score ?? 0} />
-          <ScoreBar label="Market Cap" value={fund.market_cap_score ?? 0} />
-          <ScoreBar label="Turnover" value={fund.turnover_score ?? 0} />
-          <Link
-            href={`/funds/${encodeURIComponent(fund.ticker)}`}
-            className="mt-4 inline-block text-xs font-medium text-[var(--brand-primary)] no-underline hover:underline"
-          >
-            View full detail -&gt;
-          </Link>
+        <TabsContent value="overview" className="mt-4 space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: "Risk Score", value: fund.risk_score },
+              { label: "Return Score", value: fund.return_score },
+              { label: "Market Cap", value: fund.market_cap_score },
+              { label: "Turnover", value: fund.turnover_score },
+            ].map(({ label, value }) => (
+              <div
+                key={label}
+                className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3"
+              >
+                <div className="mb-1 text-[10px] font-medium text-[var(--text-tertiary)]">
+                  {label}
+                </div>
+                <div
+                  className="font-mono text-lg font-semibold tabular-nums"
+                  style={{ color: scoreColorVar(value ?? 0) }}
+                >
+                  {(value ?? 0).toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
+            <h3 className="mb-3 text-xs font-semibold text-[var(--text-secondary)]">
+              Risk Breakdown
+            </h3>
+            <div className="space-y-2">
+              {Object.entries(fund.risk_breakdown).map(([key, value]) => (
+                <ScoreBar key={key} label={key} value={value} />
+              ))}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
+            <h3 className="mb-3 text-xs font-semibold text-[var(--text-secondary)]">
+              Return Breakdown
+            </h3>
+            <div className="space-y-2">
+              {Object.entries(fund.return_breakdown).map(([key, value]) => (
+                <ScoreBar key={key} label={key} value={value} />
+              ))}
+            </div>
+          </section>
         </TabsContent>
 
         <TabsContent value="peers" className="mt-4 space-y-4">

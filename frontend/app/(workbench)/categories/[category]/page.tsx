@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { EmptyDetail } from "@/components/workbench/empty-detail";
+import { FundDetailDock } from "@/components/workbench/fund-detail-dock";
 import { FundDetailPanel } from "@/components/workbench/fund-detail-panel";
 import { PanelMotion } from "@/components/workbench/panel-motion";
 import { RankingsGrid, type RankingRow } from "@/components/workbench/rankings-grid";
@@ -104,39 +104,42 @@ export default async function CategoryWorkbenchPage({
     : [];
 
   const panelKey = [...selectedTickers].sort().join(",");
+  const columnControlsId = `category-column-controls-${encodeURIComponent(category)}`;
 
   return (
     <div className="h-full flex">
       <section className="flex-1 min-w-0 flex flex-col">
-        <header className="px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-card)]">
-          <h1 className="text-base font-semibold tracking-tight">{category}</h1>
-          <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-            {rows.length} funds ranked by Oak Bridge multi-factor GPA -
-            decision support only.
-          </p>
+        <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-card)]">
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold tracking-tight">{category}</h1>
+            <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+              {rows.length} funds ranked by Oak Bridge multi-factor GPA -
+              decision support only.
+            </p>
+          </div>
+          <div
+            id={columnControlsId}
+            className="relative z-20 flex shrink-0 justify-end"
+          />
         </header>
         <div className="flex-1 min-h-0">
-          <RankingsGrid rows={rows} category={category} />
+          <RankingsGrid
+            rows={rows}
+            category={category}
+            columnControlsId={columnControlsId}
+          />
         </div>
       </section>
-      <aside
-        className={`shrink-0 border-l border-[var(--border-subtle)] bg-[var(--surface-card)] flex flex-col min-h-0 overflow-hidden transition-[width] duration-200 ${
-          selectedTickers.length > 0 ? "w-[640px]" : "w-80"
-        }`}
-      >
-        {selectedTickers.length > 0 ? (
-          <Suspense
-            key={panelKey}
-            fallback={<div className="p-4 flex-1 min-h-0 text-xs">Loading...</div>}
-          >
-            <PanelMotion key={panelKey}>
-              <FundDetailPanel tickers={selectedTickers} rows={rows} />
-            </PanelMotion>
-          </Suspense>
-        ) : (
-          <EmptyDetail />
-        )}
-      </aside>
+      <FundDetailDock selectedTickers={selectedTickers}>
+        <Suspense
+          key={panelKey}
+          fallback={<div className="p-4 flex-1 min-h-0 text-xs">Loading...</div>}
+        >
+          <PanelMotion key={panelKey}>
+            <FundDetailPanel tickers={selectedTickers} rows={rows} />
+          </PanelMotion>
+        </Suspense>
+      </FundDetailDock>
     </div>
   );
 }

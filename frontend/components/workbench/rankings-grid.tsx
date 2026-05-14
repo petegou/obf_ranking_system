@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { AgGridReact } from 'ag-grid-react';
 import { Check, Columns3, RotateCcw, Search, Star, Trash2, X } from 'lucide-react';
@@ -18,6 +19,11 @@ import {
 } from 'ag-grid-community';
 import { scoreColorVar } from '@/lib/score-color';
 import { useIsDarkMode } from '@/lib/use-color-scheme';
+import {
+  formatCurrencyMetric,
+  formatNumberMetric,
+  formatPercentMetric,
+} from '@/lib/metric-format';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -316,7 +322,7 @@ function metricCellRenderer(
 ) {
   const value = params.value;
   if (typeof value !== 'number') return '';
-  return value.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return formatNumberMetric(value);
 }
 
 function percentCellRenderer(
@@ -324,7 +330,7 @@ function percentCellRenderer(
 ) {
   const value = params.value;
   if (typeof value !== 'number') return '';
-  return `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}%`;
+  return formatPercentMetric(value);
 }
 
 function currencyCellRenderer(
@@ -332,11 +338,7 @@ function currencyCellRenderer(
 ) {
   const value = params.value;
   if (typeof value !== 'number') return '';
-  return value.toLocaleString(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
+  return formatCurrencyMetric(value);
 }
 
 function ScoreCell({ value }: { value: number | null | undefined }) {
@@ -452,9 +454,11 @@ async function deleteColumnPreset(id: string) {
 export function RankingsGrid({
   rows,
   category,
+  columnControlsId,
 }: {
   rows: RankingRow[];
   category: string;
+  columnControlsId?: string;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -479,10 +483,21 @@ export function RankingsGrid({
   const [presetError, setPresetError] = useState<string | null>(null);
   const [isLoadingPresets, setIsLoadingPresets] = useState(true);
   const [isSavingPreset, setIsSavingPreset] = useState(false);
+  const [columnControlsTarget, setColumnControlsTarget] =
+    useState<HTMLElement | null>(null);
+  const [activeColumnGroup, setActiveColumnGroup] = useState(
+    COLUMN_CHOOSER_GROUPS[0]?.group ?? '',
+  );
   const isSyncing = useRef(false);
   const replaceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedPreset =
     presets.find((preset) => preset.id === selectedPresetId) ?? null;
+
+  useEffect(() => {
+    if (!columnControlsId) return;
+    setColumnControlsTarget(document.getElementById(columnControlsId));
+  }, [columnControlsId]);
+
   const filteredColumnGroups = useMemo(() => {
     const query = columnSearchQuery.trim().toLowerCase();
     if (!query) return COLUMN_CHOOSER_GROUPS;
@@ -507,6 +522,17 @@ export function RankingsGrid({
     (count, group) => count + group.columns.length,
     0,
   );
+  const activeColumnGroupData =
+    COLUMN_CHOOSER_GROUPS.find((group) => group.group === activeColumnGroup) ??
+    COLUMN_CHOOSER_GROUPS[0];
+  const visibleColumnGroups = columnSearchQuery.trim()
+    ? filteredColumnGroups
+    : activeColumnGroupData
+      ? [activeColumnGroupData]
+      : [];
+  const totalDraftSelectedCount = ALL_COLUMNS.filter((column) =>
+    draftVisibleColumnIds.has(column.columnId),
+  ).length;
 
   const columns = useMemo<
     (ColDef<RankingRow> | ColGroupDef<RankingRow>)[]
@@ -1289,9 +1315,9 @@ export function RankingsGrid({
     }
   }
 
-  return (
-    <div className="relative h-full">
-      <div className="absolute right-3 top-3 z-20">
+  const columnChooserControl = (
+    <>
+      <div>
         <button
           type="button"
           onClick={openColumnChooser}
@@ -1302,7 +1328,7 @@ export function RankingsGrid({
       </div>
 
       {isColumnChooserOpen ? (
-        <div className="absolute right-3 top-12 z-30 w-[420px] max-w-[calc(100vw-2rem)] overflow-hidden rounded border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-xl">
+        <div className="absolute right-0 top-10 z-30 w-[460px] max-w-[calc(100vw-2rem)] overflow-hidden rounded border border-[var(--border-subtle)] bg-[var(--surface-card)] shadow-xl">
           <div className="flex h-11 items-center justify-between border-b border-[var(--border-subtle)] px-3">
             <div className="text-sm font-semibold tracking-tight">Columns</div>
             <button
@@ -1419,14 +1445,58 @@ export function RankingsGrid({
                 ? `${filteredColumnCount} matching column${
                     filteredColumnCount === 1 ? '' : 's'
                   }`
-                : `${ALL_COLUMNS.length} columns available`}
+                : `${totalDraftSelectedCount} of ${ALL_COLUMNS.length} columns selected`}
             </div>
           </div>
+          {!columnSearchQuery.trim() ? (
+            <div className="border-b border-[var(--border-subtle)] px-3 py-2">
+              <div className="column-group-tabs scrollbar-hide flex gap-1 overflow-x-auto pb-1">
+                {COLUMN_CHOOSER_GROUPS.map((group) => {
+                  const selectedCount = group.columns.filter((column) =>
+                    draftVisibleColumnIds.has(column.columnId),
+                  ).length;
+                  const isActive = group.group === activeColumnGroup;
+
+                  return (
+                    <button
+                      key={group.group}
+                      type="button"
+                      onClick={() => setActiveColumnGroup(group.group)}
+                      className={`flex h-8 shrink-0 items-center gap-1.5 rounded px-2.5 text-xs font-medium ${
+                        isActive
+                          ? 'bg-[var(--brand-primary)] text-white'
+                          : 'text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]'
+                      }`}>
+                      <span>{group.group}</span>
+                      <span
+                        className={`rounded px-1.5 py-0.5 font-mono text-[10px] ${
+                          isActive
+                            ? 'bg-white/20 text-white'
+                            : 'bg-[var(--surface-muted)] text-[var(--text-tertiary)]'
+                        }`}>
+                        {selectedCount}/{group.columns.length}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           <div className="max-h-[420px] overflow-y-auto p-3">
-            {filteredColumnGroups.map((group) => (
+            {visibleColumnGroups.map((group) => {
+              const groupSelectedCount = group.columns.filter((column) =>
+                draftVisibleColumnIds.has(column.columnId),
+              ).length;
+
+              return (
               <fieldset key={group.group} className="mb-4 last:mb-0">
-                <legend className="mb-2 flex w-full items-center gap-2 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
-                  <span className="min-w-0 flex-1 truncate">{group.group}</span>
+                <legend className="mb-3 flex w-full items-center gap-2 text-xs font-semibold uppercase text-[var(--text-tertiary)]">
+                  <span className="min-w-0 flex-1 truncate">
+                    {group.group}
+                    <span className="ml-2 font-mono text-[10px] font-medium normal-case text-[var(--text-secondary)]">
+                      {groupSelectedCount}/{group.columns.length}
+                    </span>
+                  </span>
                   <button
                     type="button"
                     onClick={() => selectDraftGroup(group)}
@@ -1456,8 +1526,9 @@ export function RankingsGrid({
                   ))}
                 </div>
               </fieldset>
-            ))}
-            {filteredColumnGroups.length === 0 ? (
+            );
+            })}
+            {visibleColumnGroups.length === 0 ? (
               <div className="py-8 text-center text-sm text-[var(--text-tertiary)]">
                 No columns match your search.
               </div>
@@ -1481,7 +1552,18 @@ export function RankingsGrid({
           </div>
         </div>
       ) : null}
+    </>
+  );
 
+  return (
+    <div className="relative h-full">
+      {columnControlsTarget ? (
+        createPortal(columnChooserControl, columnControlsTarget)
+      ) : (
+        <div className="absolute right-3 top-3 z-20">
+          {columnChooserControl}
+        </div>
+      )}
       <div className="h-full">
         <AgGridReact<RankingRow>
           theme={isDark ? gridThemeDark : gridThemeLight}

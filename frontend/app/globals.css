@@ -328,3 +328,26 @@ body {
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .column-group-tabs {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .column-group-tabs::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+}
