@@ -120,7 +120,7 @@ export async function getFundDetail(ticker: string, asOfDate?: string | null) {
 
   const { data: fund } = await supabase
     .from("funds")
-    .select("ticker, name, category")
+    .select("ticker, name, category, asset_type")
     .ilike("ticker", ticker)
     .single();
   if (!fund) return null;
@@ -144,6 +144,7 @@ export async function getFundDetail(ticker: string, asOfDate?: string | null) {
     ticker: fund.ticker,
     name: fund.name,
     category: fund.category,
+    asset_type: (fund as { asset_type?: string | null }).asset_type ?? null,
     as_of_date: date,
     rank: ranking?.category_rank ?? null,
     total_gpa_score: ranking?.total_gpa_score ?? null,
