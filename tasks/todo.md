@@ -28,6 +28,30 @@
 - New tickers seen for the first time will land with `funds.name = ''` (existing names preserved on conflict, per spec). UI degrades gracefully but admins should backfill names. Worth a follow-up if the trade-off proves disruptive.
 - Pre-existing Supabase advisor warnings (GraphQL anon/authenticated exposure on every public table, `is_admin()` SECURITY DEFINER, leaked-password protection off) are unchanged by this work but are real tech debt.
 
+## Open follow-ups from the first production upload (2026-05-20)
+
+After the first upload of `Updated Fund Rankings.csv` to production, the scatter chart on `/categories/Alternatives` revealed three data-quality issues from the upstream CSV. Spot-check vs. the prior YCharts upload (2026-04-28) using JEPI as a reference:
+
+| Field | Old (decimal) | New (CSV %) | Expected % | Status |
+|---|---|---|---|---|
+| `return_3yr` | 0.313741 | 29.99 | 30% | OK (UI auto-detects) |
+| `drawdown_3yr` | 0.132557 | 13.26 | 13.26% | OK |
+| `std_dev_3yr` | 0.00634 | 0.01 | daily decimal, ann. 10% | Precision loss (see below) |
+| `alpha_3yr` | -2.601374 | -342.93 | ~-3.4% | ~100× too large (pending verification) |
+| `tracking_error_3yr` | 5.42 | 542 | ~5.4% | ~100× too large (pending verification) |
+
+### Issues
+
+1. **Alpha + Tracking Error scale (pending verification).** ~80% of funds (5,348 of 6,724) have `|alpha_3yr| > 50` and ~89% have `|tracking_error_3yr| > 50`. Both look like they're encoded as basis-points but emitted with a `%` suffix (e.g. `-342.93%` should be -3.43%). Waiting on the source Excel sheet to confirm before scaling in the importer.
+2. **2,018 funds (30%) have `std_dev_3yr = 0`** — upstream writes `0` (or empty) where the metric is unavailable. Leaving as-is per decision; these plot at x=0 on the scatter. Revisit if it becomes UX-disruptive.
+3. **Std Dev precision lost from upstream.** New CSV provides `std_dev_3yr` rounded to 2 decimals (e.g. JEPI = 0.01), where the old YCharts feed gave 5+ decimals (0.00634). Many funds annualize to identical values (0.01 → 15.87%) which weakens within-category ranking on that metric. Flag to data provider as a follow-up; no code change.
+
+### Action items
+
+- [ ] Receive original Excel sheet from data provider; confirm intended units for Alpha and Tracking Error.
+- [ ] If basis-points: update `frontend/lib/csv-import.ts` to scale alpha + TE by 1/100 on import, then re-upload 5/20 CSV (or run a one-shot `UPDATE fund_metrics SET alpha_3yr = alpha_3yr / 100 ...`).
+- [ ] Flag std_dev precision regression to data provider; request 4-5 decimals.
+
 > Spec: `docs/superpowers/specs/2026-05-19-updated-fund-rankings-csv-design.md`
 > Plan: `docs/superpowers/plans/2026-05-19-updated-fund-rankings-csv.md`
 
