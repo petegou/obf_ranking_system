@@ -1,3 +1,36 @@
+# Updated Fund Rankings CSV — Todo
+
+## Active — Switch importer + schema to the new official CSV format
+
+- [x] Inspect live Supabase schema (`tasks/2026-05-20-schema-inspection.md`).
+- [x] Migration 004 — add `funds.asset_type` and 16 missing columns to `fund_metrics`.
+- [x] Apply migration 004 to production Supabase (user opted to skip branch path; migration is additive only).
+- [x] Rewrite `frontend/lib/csv-import.ts` for the new "Updated Fund Rankings" headers:
+  - new column map (53 fields)
+  - `parseInceptionDate` (`Mon-DD-YYYY` → ISO, calendar-day validated)
+  - `warnings[]` on `ImportResult`; uncategorized rows are warnings, not errors
+  - funds-registry upsert omits `name`, preserving existing names on conflict
+- [x] Surface `warnings` on `/api/upload` response totals.
+- [x] Extend `getFundDetail` to return `asset_type`.
+- [x] Render `Asset Type` chip in fund detail header.
+- [x] Add `Last Price` column to rankings grid (new `formatPriceMetric` for 2-decimal currency).
+
+## Verification
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed (existing multiple-lockfile workspace-root warning).
+- Supabase column inventory confirmed all 17 new columns present in production.
+- Manual CSV upload against production + score-shift spot-checks pending — to be triggered via the admin upload UI when ready.
+
+## Known trade-offs
+
+- New tickers seen for the first time will land with `funds.name = ''` (existing names preserved on conflict, per spec). UI degrades gracefully but admins should backfill names. Worth a follow-up if the trade-off proves disruptive.
+- Pre-existing Supabase advisor warnings (GraphQL anon/authenticated exposure on every public table, `is_admin()` SECURITY DEFINER, leaked-password protection off) are unchanged by this work but are real tech debt.
+
+> Spec: `docs/superpowers/specs/2026-05-19-updated-fund-rankings-csv-design.md`
+> Plan: `docs/superpowers/plans/2026-05-19-updated-fund-rankings-csv.md`
+
 # Frontend Workbench UX — Todo
 
 ## Active — Fund Detail Panel
