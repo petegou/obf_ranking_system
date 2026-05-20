@@ -1,0 +1,30 @@
+-- Migration 004: Updated Fund Rankings CSV ingestion
+-- Adds asset_type to funds and last_price + any missing scoring inputs
+-- to fund_metrics. Additive only; no RLS changes.
+
+BEGIN;
+
+-- funds: asset_type (stable per ticker, e.g. "Equity", "Non-Equity")
+ALTER TABLE funds
+  ADD COLUMN IF NOT EXISTS asset_type VARCHAR(50) DEFAULT NULL;
+
+-- fund_metrics: per-snapshot fields the new CSV brings
+ALTER TABLE fund_metrics
+  ADD COLUMN IF NOT EXISTS last_price        DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS inception_date    DATE             DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS aum               DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS turnover          DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS beta_3yr          DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS beta_5yr          DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS std_dev_3yr       DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS std_dev_5yr       DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS kurtosis_3yr      DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS kurtosis_5yr      DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS skewness_3yr      DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS skewness_5yr      DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS drawdown_3yr      DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS drawdown_5yr      DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS downside_dev_3yr  DOUBLE PRECISION DEFAULT NULL,
+  ADD COLUMN IF NOT EXISTS downside_dev_5yr  DOUBLE PRECISION DEFAULT NULL;
+
+COMMIT;

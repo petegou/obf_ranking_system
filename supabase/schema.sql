@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS funds (
   category        VARCHAR(100) NOT NULL,
 
   -- General
+  asset_type      VARCHAR(50)  DEFAULT NULL,
   inception_date  DATE         DEFAULT NULL,
   aum             DOUBLE PRECISION DEFAULT NULL,
   turnover        DOUBLE PRECISION DEFAULT NULL,
