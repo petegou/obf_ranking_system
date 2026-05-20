@@ -124,8 +124,13 @@ function SingleFundDetail({
             Rank {fund.rank ?? "-"}
           </div>
         </div>
-        <div className="text-xs text-[var(--text-secondary)] mt-0.5 truncate">
-          {fund.name}
+        <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+          <span className="truncate">{fund.name}</span>
+          {fund.asset_type ? (
+            <span className="rounded-full border border-[var(--border-subtle)] px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--text-tertiary)]">
+              {fund.asset_type}
+            </span>
+          ) : null}
         </div>
         <div className="mt-3 flex items-baseline gap-2">
           <span
