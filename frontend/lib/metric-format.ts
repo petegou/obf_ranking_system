@@ -26,3 +26,12 @@ export function formatCurrencyMetric(value: number): string {
     maximumFractionDigits: 0,
   });
 }
+
+export function formatPriceMetric(value: number): string {
+  return value.toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}

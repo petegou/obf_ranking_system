@@ -50,6 +50,7 @@ export default async function CategoryWorkbenchPage({
     feeScore: ranking.return_breakdown.fee,
     aum: numOrNull(ranking.metrics.aum),
     turnover: numOrNull(ranking.metrics.turnover),
+    lastPrice: numOrNull(ranking.metrics.last_price),
     expenseRatio: numOrNull(ranking.metrics.expense_ratio),
     yieldPct: numOrNull(ranking.metrics.yield_pct),
     pe: numOrNull(ranking.metrics.pe),

@@ -23,6 +23,7 @@ import {
   formatCurrencyMetric,
   formatNumberMetric,
   formatPercentMetric,
+  formatPriceMetric,
 } from '@/lib/metric-format';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -83,6 +84,7 @@ export interface RankingRow {
   feeScore: number;
   aum: number | null;
   turnover: number | null;
+  lastPrice: number | null;
   expenseRatio: number | null;
   yieldPct: number | null;
   pe: number | null;
@@ -207,6 +209,7 @@ const COLUMN_CHOOSER_GROUPS: ColumnChoiceGroup[] = [
     columns: [
       { columnId: 'profile.aum', field: 'aum', label: 'AUM' },
       { columnId: 'profile.turnover', field: 'turnover', label: 'Turnover' },
+      { columnId: 'profile.last_price', field: 'lastPrice', label: 'Last Price' },
       { columnId: 'profile.expense_ratio', field: 'expenseRatio', label: 'Expense Ratio' },
       { columnId: 'profile.yield', field: 'yieldPct', label: 'Yield' },
       { columnId: 'profile.pe', field: 'pe', label: 'P/E' },
@@ -339,6 +342,14 @@ function currencyCellRenderer(
   const value = params.value;
   if (typeof value !== 'number') return '';
   return formatCurrencyMetric(value);
+}
+
+function priceCellRenderer(
+  params: ValueFormatterParams<RankingRow, number | null>,
+) {
+  const value = params.value;
+  if (typeof value !== 'number') return '';
+  return formatPriceMetric(value);
 }
 
 function ScoreCell({ value }: { value: number | null | undefined }) {
@@ -677,6 +688,13 @@ export function RankingsGrid({
             percentCellRenderer,
             120,
             isHidden('turnover'),
+          ),
+          metricColumn(
+            'Last Price',
+            'lastPrice',
+            priceCellRenderer,
+            110,
+            isHidden('lastPrice'),
           ),
           metricColumn(
             'Expense Ratio',
