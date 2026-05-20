@@ -62,6 +62,19 @@ decisions; they are not absolute selections or definitive verdicts.
 
 ## Workflow
 
+### Session pre-flight
+
+Before planning anything, run this ritual at the top of every session:
+
+1. `git status` — surface any dirty tree to the user before doing more. If
+   files you are about to touch have uncommitted edits, understand them and
+   confirm with the user before proceeding.
+2. Read `tasks/lessons.md` — refresh recurring patterns from prior sessions.
+3. Read `tasks/todo.md` — check open follow-ups.
+4. State scope to user; confirm before creating todos.
+
+### Planning and tracking
+
 - For tasks with 3+ implementation steps, architectural decisions, database
   changes, auth changes, or ranking/scoring changes, update `tasks/todo.md` with
   a short checklist before editing code.
@@ -70,9 +83,8 @@ decisions; they are not absolute selections or definitive verdicts.
 - Track meaningful progress in `tasks/todo.md` when working from a checklist.
 - If facts conflict between files, prefer the most local `AGENTS.md` for coding
   mechanics and `.claude/CLAUDE.md` / this file for project safety rules.
-- If the user corrects an agent behavior pattern, record the lesson in
-  `tasks/lessons.md` if that file exists; create it only when the correction is
-  durable and project-relevant.
+- Update `tasks/lessons.md` at session end when a durable, project-relevant
+  pattern emerged — especially after a user correction.
 
 ## Verification
 
@@ -82,6 +94,13 @@ decisions; they are not absolute selections or definitive verdicts.
 - For ranking logic, verify outputs against known or derived expected values.
 - For database changes, inspect the related migration and RLS impact before
   summarizing the work.
+- **For data-import work specifically, verification means data verification.**
+  Schema-level checks ("columns present, types correct, rows upserted") are not
+  enough. Spot-check at least 3 representative rows in the DB and confirm
+  magnitudes/units/signs match expectations before marking the task complete.
+  If you cannot run the verification yourself, mark the task
+  `gated-on-user-action` and surface that to the user — do not punt the
+  verification while claiming the task is done.
 - If verification cannot be run, state exactly why and what remains unverified.
 
 ## File Map

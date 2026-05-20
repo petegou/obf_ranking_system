@@ -64,6 +64,19 @@ definitive verdicts.
 
 ## Workflow Orchestration
 
+### Session Pre-flight
+
+Before planning *anything*, run this ritual at the top of every session:
+
+1. **`git status`** — surface any dirty tree to the user before doing more.
+   If files you're about to touch have uncommitted edits, understand what
+   they are and confirm with the user before proceeding.
+2. **Read `tasks/lessons.md`** — refresh recurring patterns from prior
+   sessions before deciding how to approach the new task.
+3. **Read `tasks/todo.md`** — check open follow-ups; some may already cover
+   what the user is asking for.
+4. **State scope to user; confirm before creating todos.**
+
 ### Plan First
 
 - For ANY task with 3+ steps or architectural decisions: enter Plan Mode first.
@@ -80,6 +93,16 @@ definitive verdicts.
 ### Verification Before Done
 
 - Never mark a task complete without proving it works.
+- **Verification means *data* verification.** For data-import, scoring, or
+  ranking work, schema checks ("all columns present, types correct, rows
+  upserted") are not enough. Spot-check at least 3 representative rows in
+  the DB and confirm magnitudes/units/signs match expectations before
+  marking complete. A correct schema with corrupted values is worse than
+  a missing column because the failure is invisible until someone looks at
+  the output.
+- **If you can't run the verification yourself, mark the task
+  `gated-on-user-action` and surface it explicitly.** Don't punt the
+  verification to the user while claiming the task is done.
 - For ranking logic changes: verify outputs against known expected values before calling done.
 - Ask yourself: "Would a staff engineer approve this?"
 - Check Supabase logs if any backend work was done.
