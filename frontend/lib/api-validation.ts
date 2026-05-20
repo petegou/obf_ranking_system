@@ -204,6 +204,8 @@ export function validateIsoDate(value: unknown, fieldName: string) {
 export const MAX_UPLOAD_FILES = 10;
 export const MAX_UPLOAD_FILE_BYTES = 25 * 1024 * 1024;
 
+const ACCEPTED_UPLOAD_EXTENSIONS = [".xlsx", ".csv"] as const;
+
 export function validateCsvUploadFiles(files: File[]) {
   const errors: string[] = [];
 
@@ -212,12 +214,14 @@ export function validateCsvUploadFiles(files: File[]) {
   }
 
   if (files.length > MAX_UPLOAD_FILES) {
-    errors.push(`Upload at most ${MAX_UPLOAD_FILES} CSV files at a time.`);
+    errors.push(`Upload at most ${MAX_UPLOAD_FILES} files at a time.`);
   }
 
   for (const file of files) {
-    if (!file.name.toLowerCase().endsWith(".csv")) {
-      errors.push(`${file.name}: only CSV files are accepted.`);
+    const name = file.name.toLowerCase();
+    const ok = ACCEPTED_UPLOAD_EXTENSIONS.some((ext) => name.endsWith(ext));
+    if (!ok) {
+      errors.push(`${file.name}: only .xlsx or .csv files are accepted.`);
     }
     if (file.size === 0) {
       errors.push(`${file.name}: file is empty.`);

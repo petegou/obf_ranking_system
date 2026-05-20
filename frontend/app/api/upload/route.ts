@@ -43,16 +43,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: fileErrors.join(" ") }, { status: 400 });
   }
 
-  const fileTexts = await Promise.all(
-    files.map(async (file) => ({
-      file,
-      text: await file.text(),
-    })),
-  );
-
   const validationResults = await Promise.all(
-    fileTexts.map(async ({ file, text }) => {
-      const result = await importCSV(text, file.name, asOfDate, { dryRun: true });
+    files.map(async (file) => {
+      const result = await importCSV(file, asOfDate, { dryRun: true });
       return { filename: file.name, ...result };
     })
   );
@@ -75,8 +68,8 @@ export async function POST(request: NextRequest) {
 
   // Process all files in parallel — safe because importCSV no longer triggers scoring
   const results = await Promise.all(
-    fileTexts.map(async ({ file, text }) => {
-      const result = await importCSV(text, file.name, asOfDate);
+    files.map(async (file) => {
+      const result = await importCSV(file, asOfDate);
       return { filename: file.name, ...result };
     })
   );

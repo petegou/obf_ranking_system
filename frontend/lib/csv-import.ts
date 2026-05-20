@@ -1,9 +1,20 @@
 /**
- * CSV import — parse 'Updated Fund Rankings' exports, upsert funds registry,
- * insert fund_metrics. Scoring is triggered separately by the caller.
+ * Data import — parse 'Updated Fund Rankings' exports (.xlsx preferred,
+ * .csv accepted for backward compatibility), upsert funds registry, insert
+ * fund_metrics. Scoring is triggered separately by the caller.
+ *
+ * Why .xlsx is preferred: Excel's CSV export serializes the displayed
+ * value, not the underlying number. Cells formatted as `0.00%` get
+ * multiplied by 100 in the CSV text (e.g. raw 0.0035 becomes "0.35%"),
+ * and decimals beyond the display precision are lost (raw 0.006357
+ * becomes "0.01"). Reading the .xlsx directly preserves raw cell values
+ * so std-dev precision and tracking-error scaling are correct.
  */
 
+import ExcelJS from "exceljs";
 import { supabase } from "./supabase";
+
+type Cell = string | number | Date | null;
 
 const FUND_RANKINGS_COLUMN_MAP: Record<string, string> = {
   "ticker":              "ticker",
@@ -120,6 +131,13 @@ const MONTH_ABBREV: Record<string, string> = {
   jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
 };
 
+function formatDateISO(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function parseInceptionDate(val: string): { value: string | null; error: string | null } {
   const trimmed = val.trim();
   if (!trimmed || ["N/A", "NA", "-", "--"].includes(trimmed.toUpperCase())) {
@@ -145,6 +163,39 @@ function parseInceptionDate(val: string): { value: string | null; error: string 
     return { value: null, error: "inception_date is not a valid calendar date." };
   }
   return { value: iso, error: null };
+}
+
+async function parseXlsx(buffer: ArrayBuffer): Promise<Cell[][]> {
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(buffer);
+  const sheet = workbook.worksheets[0];
+  if (!sheet) return [];
+
+  const rows: Cell[][] = [];
+  sheet.eachRow({ includeEmpty: false }, (row) => {
+    // row.values is 1-indexed; index 0 is undefined.
+    const values = row.values as unknown[];
+    const cells: Cell[] = [];
+    for (let i = 1; i < values.length; i++) {
+      cells.push(toCell(values[i]));
+    }
+    rows.push(cells);
+  });
+  return rows;
+}
+
+function toCell(v: unknown): Cell {
+  if (v === null || v === undefined) return null;
+  if (typeof v === "string" || typeof v === "number") return v;
+  if (v instanceof Date) return v;
+  if (typeof v === "object") {
+    // exceljs formula / rich text / error objects expose a `.result`
+    // or `.text` we can fall back to.
+    const o = v as { result?: unknown; text?: unknown };
+    if ("result" in o) return toCell(o.result);
+    if ("text" in o) return toCell(o.text);
+  }
+  return String(v);
 }
 
 function parseCSV(text: string): string[][] {
@@ -200,11 +251,11 @@ async function batchUpsert(
 }
 
 export async function importCSV(
-  csvText: string,
-  filename: string,
+  file: File,
   asOfDate: string,
   options: { dryRun?: boolean } = {},
 ): Promise<ImportResult> {
+  const filename = file.name;
   const result: ImportResult = {
     rows_total:    0,
     rows_upserted: 0,
@@ -213,14 +264,29 @@ export async function importCSV(
     warnings:      [],
   };
 
-  const rows = parseCSV(csvText);
+  let rows: Cell[][];
+  try {
+    if (filename.toLowerCase().endsWith(".xlsx")) {
+      rows = await parseXlsx(await file.arrayBuffer());
+    } else {
+      const text = await file.text();
+      rows = parseCSV(text);
+    }
+  } catch (err) {
+    addError(
+      result,
+      `Failed to read ${filename}: ${err instanceof Error ? err.message : "unknown error"}`,
+    );
+    return result;
+  }
+
   if (rows.length < 2) {
-    addError(result, "CSV file is empty or has no data rows.");
+    addError(result, "File is empty or has no data rows.");
     return result;
   }
 
   const headers = rows[0].map((h) =>
-    h.replace(/^﻿/, "").trim().toLowerCase()
+    String(h ?? "").replace(/^﻿/, "").trim().toLowerCase()
   );
 
   if (!headers.includes("ticker")) {
@@ -252,24 +318,36 @@ export async function importCSV(
     let rowHasError = false;
 
     for (const [csvIdx, dbCol] of colMap) {
-      const raw = row[csvIdx] ?? "";
+      const raw = row[csvIdx];
       if (dbCol === "ticker" || dbCol === "category" || dbCol === "asset_type") {
-        const trimmed = raw.trim();
+        const trimmed = raw === null || raw === undefined ? "" : String(raw).trim();
         parsed[dbCol] = trimmed || null;
       } else if (dbCol === "inception_date") {
-        const r = parseInceptionDate(raw);
-        if (r.error) {
-          rowHasError = true;
-          addError(result, `Row ${rowIdx + 1}: ${r.error}`);
+        if (raw instanceof Date) {
+          parsed[dbCol] = formatDateISO(raw);
+        } else {
+          const text = raw === null || raw === undefined ? "" : String(raw);
+          const r = parseInceptionDate(text);
+          if (r.error) {
+            rowHasError = true;
+            addError(result, `Row ${rowIdx + 1}: ${r.error}`);
+          }
+          parsed[dbCol] = r.value;
         }
-        parsed[dbCol] = r.value;
       } else {
-        const r = parseNumber(raw, headers[csvIdx] ?? dbCol);
-        if (r.error) {
-          rowHasError = true;
-          addError(result, `Row ${rowIdx + 1}: ${r.error}`);
+        // Numeric column. xlsx gives us a raw number; CSV gives us a string.
+        if (typeof raw === "number") {
+          parsed[dbCol] = Number.isFinite(raw) ? raw : null;
+        } else if (raw === null || raw === undefined) {
+          parsed[dbCol] = null;
+        } else {
+          const r = parseNumber(String(raw), headers[csvIdx] ?? dbCol);
+          if (r.error) {
+            rowHasError = true;
+            addError(result, `Row ${rowIdx + 1}: ${r.error}`);
+          }
+          parsed[dbCol] = r.value;
         }
-        parsed[dbCol] = r.value;
       }
     }
 

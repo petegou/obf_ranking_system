@@ -100,7 +100,7 @@ export default function UploadPage() {
           Upload Data
         </h1>
         <p className="mt-0.5 text-sm text-[var(--text-tertiary)]">
-          Import YCharts comp_table CSV exports for a selected data date.
+          Import the Updated Fund Rankings Excel export (.xlsx) for a selected data date. .csv is also accepted as a fallback.
         </p>
       </header>
 
@@ -110,8 +110,7 @@ export default function UploadPage() {
             Import files
           </h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
-            Upload all three CSV files together so the rankings share the same
-            as-of date.
+            Upload one .xlsx export (preferred — preserves full numeric precision) or a .csv. Multiple files for the same as-of date are accepted.
           </p>
         </div>
 
@@ -132,13 +131,13 @@ export default function UploadPage() {
           </div>
 
           <label className="text-sm font-medium text-[var(--text-primary)]">
-            CSV Files <span className="text-[var(--score-weak)]">*</span>
+            Data files <span className="text-[var(--score-weak)]">*</span>
           </label>
           <div>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".csv"
+              accept=".xlsx,.csv"
               multiple
               onChange={(e) => {
                 setFiles(Array.from(e.target.files ?? []));
