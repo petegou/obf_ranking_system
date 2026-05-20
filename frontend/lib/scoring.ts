@@ -150,19 +150,33 @@ export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
 
   const cfg = await loadConfig();
 
-  // Get distinct categories for this date
-  const { data: metricRows } = await supabase
-    .from("fund_metrics")
-    .select("ticker, funds(category)")
-    .eq("as_of_date", asOfDate);
-
-  const categories = [
-    ...new Set(
-      (metricRows ?? [])
-        .map((r) => (r.funds as unknown as { category: string } | null)?.category)
-        .filter(Boolean) as string[]
-    ),
-  ];
+  // Get distinct categories for this date.
+  //
+  // PostgREST caps responses at 1000 rows by default. With 6,700+ metrics
+  // rows per snapshot, an unbounded SELECT silently truncates and we lose
+  // categories whose funds happen to fall outside the first page — which is
+  // exactly the bug that left 15 of 23 categories unscored on the 2026-05-20
+  // upload. Page through the result set explicitly. Mirrors the pattern in
+  // getOverviewRankingRows().
+  const CATEGORY_PAGE_SIZE = 1000;
+  const categoriesSet = new Set<string>();
+  for (let from = 0; ; from += CATEGORY_PAGE_SIZE) {
+    const to = from + CATEGORY_PAGE_SIZE - 1;
+    const { data: page, error } = await supabase
+      .from("fund_metrics")
+      .select("ticker, funds(category)")
+      .eq("as_of_date", asOfDate)
+      .order("ticker", { ascending: true })
+      .range(from, to);
+    if (error) throw new Error(error.message);
+    if (!page || page.length === 0) break;
+    for (const r of page) {
+      const cat = (r.funds as unknown as { category?: string } | null)?.category;
+      if (cat) categoriesSet.add(cat);
+    }
+    if (page.length < CATEGORY_PAGE_SIZE) break;
+  }
+  const categories = [...categoriesSet];
 
   for (const category of categories) {
     // Load all metrics + fund info for this category + date
