@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { recalculateAllRankings } from "@/lib/scoring";
+import {
+  parseJsonError,
+  validateScoringConfigPayload,
+} from "@/lib/api-validation";
 
 export async function GET() {
   const { data, error } = await supabase
@@ -38,13 +42,27 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch (error: unknown) {
+    return NextResponse.json({ error: parseJsonError(error) }, { status: 400 });
+  }
 
-  for (const [key, value] of Object.entries(body)) {
+  const validation = validateScoringConfigPayload(body);
+  if (!validation.ok) {
+    return NextResponse.json({ error: validation.errors.join(" ") }, { status: 400 });
+  }
+
+  for (const [key, value] of Object.entries(validation.value)) {
     const val = typeof value === "object" ? JSON.stringify(value) : String(value);
-    await supabase
+    const { error } = await supabase
       .from("scoring_config")
       .upsert({ config_key: key, config_value: val }, { onConflict: "config_key" });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
   }
 
   await recalculateAllRankings();

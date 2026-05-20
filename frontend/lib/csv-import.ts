@@ -58,6 +58,8 @@ const METRICS_COLS = new Set(
 );
 
 const BATCH_SIZE = 500;
+const MAX_IMPORT_ERRORS = 100;
+const TICKER_PATTERN = /^[A-Za-z0-9._-]{1,20}$/;
 
 export interface ImportResult {
   rows_total: number;
@@ -66,12 +68,35 @@ export interface ImportResult {
   errors: string[];
 }
 
-function parseNumber(val: string): number | null {
-  if (!val || ["N/A", "NA", "-", "--", ""].includes(val.trim().toUpperCase()))
-    return null;
-  const cleaned = val.trim().replace(/%/g, "").replace(/,/g, "");
-  const n = parseFloat(cleaned);
-  return isNaN(n) ? null : n;
+function addError(result: ImportResult, message: string) {
+  if (result.errors.length < MAX_IMPORT_ERRORS) {
+    result.errors.push(message);
+  } else if (result.errors.length === MAX_IMPORT_ERRORS) {
+    result.errors.push("Additional validation errors were omitted.");
+  }
+}
+
+function parseNumber(val: string, fieldName: string) {
+  const trimmed = val.trim();
+  if (!trimmed || ["N/A", "NA", "-", "--"].includes(trimmed.toUpperCase())) {
+    return { value: null, error: null };
+  }
+
+  const negativeWrapped =
+    trimmed.startsWith("(") && trimmed.endsWith(")")
+      ? `-${trimmed.slice(1, -1)}`
+      : trimmed;
+  const cleaned = negativeWrapped.replace(/[%,$]/g, "").replace(/,/g, "").trim();
+  const numericPattern = /^[-+]?(?:\d+\.?\d*|\.\d+)(?:e[-+]?\d+)?$/i;
+
+  if (!numericPattern.test(cleaned)) {
+    return { value: null, error: `${fieldName} must be numeric.` };
+  }
+
+  const n = Number(cleaned);
+  return Number.isFinite(n)
+    ? { value: n, error: null }
+    : { value: null, error: `${fieldName} must be finite.` };
 }
 
 function parseCSV(text: string): string[][] {
@@ -129,7 +154,8 @@ async function batchUpsert(
 export async function importCSV(
   csvText: string,
   filename: string,
-  asOfDate: string
+  asOfDate: string,
+  options: { dryRun?: boolean } = {},
 ): Promise<ImportResult> {
   const result: ImportResult = {
     rows_total:   0,
@@ -140,7 +166,7 @@ export async function importCSV(
 
   const rows = parseCSV(csvText);
   if (rows.length < 2) {
-    result.errors.push("CSV file is empty or has no data rows.");
+    addError(result, "CSV file is empty or has no data rows.");
     return result;
   }
 
@@ -149,11 +175,11 @@ export async function importCSV(
   );
 
   if (!headers.includes("symbol")) {
-    result.errors.push("Missing required column: 'Symbol'.");
+    addError(result, "Missing required column: 'Symbol'.");
     return result;
   }
   if (!headers.includes("ycharts benchmark category")) {
-    result.errors.push("Missing required column: 'YCharts Benchmark Category'.");
+    addError(result, "Missing required column: 'YCharts Benchmark Category'.");
     return result;
   }
 
@@ -166,28 +192,61 @@ export async function importCSV(
   // Parse all rows first, collecting into batch arrays
   const fundsBatch: { ticker: string; name: string; category: string }[] = [];
   const metricsBatch: Record<string, unknown>[] = [];
+  const skippedRows = new Set<number>();
 
   for (let rowIdx = 1; rowIdx < rows.length; rowIdx++) {
     const row = rows[rowIdx];
     result.rows_total++;
 
     const parsed: Record<string, unknown> = {};
+    let rowHasError = false;
     for (const [csvIdx, dbCol] of colMap) {
       const raw = row[csvIdx] ?? "";
-      parsed[dbCol] = FUND_REGISTRY_COLS.has(dbCol) ? raw.trim() : parseNumber(raw);
+      if (FUND_REGISTRY_COLS.has(dbCol)) {
+        parsed[dbCol] = raw.trim();
+      } else {
+        const parsedNumber = parseNumber(raw, headers[csvIdx] ?? dbCol);
+        if (parsedNumber.error) {
+          rowHasError = true;
+          addError(result, `Row ${rowIdx + 1}: ${parsedNumber.error}`);
+        }
+        parsed[dbCol] = parsedNumber.value;
+      }
     }
 
     const ticker = parsed.ticker as string;
     if (!ticker) {
-      result.rows_skipped++;
-      result.errors.push(`Row ${rowIdx + 1}: missing ticker, skipped.`);
+      rowHasError = true;
+      addError(result, `Row ${rowIdx + 1}: missing ticker.`);
+    } else if (!TICKER_PATTERN.test(ticker)) {
+      rowHasError = true;
+      addError(result, `Row ${rowIdx + 1}: ticker must be 20 characters or fewer and contain only letters, numbers, dots, underscores, or hyphens.`);
+    }
+
+    const name = (parsed.name as string | undefined) || "";
+    if (name.length > 255) {
+      rowHasError = true;
+      addError(result, `Row ${rowIdx + 1}: fund name exceeds 255 characters.`);
+    }
+
+    const category = (parsed.category as string | undefined) || "";
+    if (!category) {
+      rowHasError = true;
+      addError(result, `Row ${rowIdx + 1}: missing category.`);
+    } else if (category.length > 100) {
+      rowHasError = true;
+      addError(result, `Row ${rowIdx + 1}: category exceeds 100 characters.`);
+    }
+
+    if (rowHasError) {
+      skippedRows.add(rowIdx);
       continue;
     }
 
     fundsBatch.push({
       ticker,
-      name:     (parsed.name     as string) || "",
-      category: (parsed.category as string) || "",
+      name,
+      category,
     });
 
     const metricsRecord: Record<string, unknown> = { ticker, as_of_date: asOfDate };
@@ -197,10 +256,22 @@ export async function importCSV(
     metricsBatch.push(metricsRecord);
   }
 
+  result.rows_skipped = skippedRows.size;
+  if (result.errors.length > 0) {
+    if (!options.dryRun) {
+      await logUpload(filename, result);
+    }
+    return result;
+  }
+
+  if (options.dryRun) {
+    return result;
+  }
+
   // Bulk upsert funds registry
   const fundsError = await batchUpsert("funds", fundsBatch, "ticker");
   if (fundsError) {
-    result.errors.push(`Funds registry upsert failed: ${fundsError}`);
+    addError(result, `Funds registry upsert failed: ${fundsError}`);
     result.rows_skipped += fundsBatch.length;
     await logUpload(filename, result);
     return result;
@@ -209,7 +280,7 @@ export async function importCSV(
   // Bulk upsert metrics
   const metricsError = await batchUpsert("fund_metrics", metricsBatch, "ticker,as_of_date");
   if (metricsError) {
-    result.errors.push(`Metrics upsert failed: ${metricsError}`);
+    addError(result, `Metrics upsert failed: ${metricsError}`);
     result.rows_skipped += metricsBatch.length;
   } else {
     result.rows_upserted = metricsBatch.length;

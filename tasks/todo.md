@@ -1,3 +1,36 @@
+# Frontend Workbench UX — Todo
+
+## Active — Fund Detail Panel
+- [x] Hide the fund detail panel until a fund is selected.
+- [x] Add detail panel minimize/reopen behavior for selected funds.
+- [x] Add resizable detail panel width control.
+- [x] Remove the temporary fund comparison chart from the detail panel.
+- [x] Move full fund page overview content into the individual fund overview tab.
+- [x] Normalize percentage-style raw metric display units across grid and scatter chart.
+- [x] Convert risk/reward scatter to annualized risk and annualized return.
+- [x] Add a Morningstar-style risk/reward breakdown table with GOV.
+- [x] Run frontend verification.
+
+## Verification
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Dev server not started because an existing app server is already running.
+
+# Backend Data Validation — Todo
+
+## Active — API and Import Validation
+- [x] Add reusable backend validators for scoring config and upload metadata.
+- [x] Tighten CSV import row validation for required identity fields and numeric parsing.
+- [x] Wire validation into API routes before database writes or ranking recalculation.
+- [x] Run frontend verification.
+
+## Verification
+- `npx tsc --noEmit` passed.
+- `npx eslint app/api/config/route.ts app/api/upload/route.ts lib/api-validation.ts lib/csv-import.ts` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Full `npm run lint` passed after the fund detail dock minimized-state fix.
+
 # Phase 1 Dashboard Redesign — Todo
 
 ## Active — Overview Decision Dashboard
