@@ -106,8 +106,9 @@ export async function POST(request: NextRequest) {
       rows_upserted: acc.rows_upserted + r.rows_upserted,
       rows_skipped:  acc.rows_skipped  + r.rows_skipped,
       errors:        [...acc.errors,   ...r.errors],
+      warnings:      [...acc.warnings, ...r.warnings],
     }),
-    { rows_total: 0, rows_upserted: 0, rows_skipped: 0, errors: [] as string[] }
+    { rows_total: 0, rows_upserted: 0, rows_skipped: 0, errors: [] as string[], warnings: [] as string[] }
   );
 
   return NextResponse.json({ as_of_date: asOfDate, files: results, ...totals });
