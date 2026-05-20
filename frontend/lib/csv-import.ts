@@ -134,7 +134,17 @@ function parseInceptionDate(val: string): { value: string | null; error: string 
     return { value: null, error: "inception_date has an unknown month abbreviation." };
   }
   const day = match[2].padStart(2, "0");
-  return { value: `${match[3]}-${month}-${day}`, error: null };
+  const iso = `${match[3]}-${month}-${day}`;
+  const reconstructed = new Date(`${iso}T00:00:00Z`);
+  if (
+    Number.isNaN(reconstructed.getTime()) ||
+    reconstructed.getUTCFullYear() !== Number(match[3]) ||
+    reconstructed.getUTCMonth() + 1 !== Number(month) ||
+    reconstructed.getUTCDate() !== Number(match[2])
+  ) {
+    return { value: null, error: "inception_date is not a valid calendar date." };
+  }
+  return { value: iso, error: null };
 }
 
 function parseCSV(text: string): string[][] {
