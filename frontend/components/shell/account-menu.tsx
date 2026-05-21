@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { ReleaseNotesDialog } from "@/components/release-notes-dialog";
 import { ReleaseNotesMenuItem } from "@/components/release-notes-menu-item";
 import { useThemeMode, type ThemeMode } from "@/lib/theme";
 
@@ -37,6 +38,7 @@ export function AccountMenu({
   onSignOut: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { mode, setMode } = useThemeMode();
 
@@ -63,6 +65,15 @@ export function AccountMenu({
 
   return (
     <div ref={rootRef} className="relative">
+      <ReleaseNotesDialog
+        open={notesOpen}
+        onOpenChange={setNotesOpen}
+        mode="all"
+        lastSeenVersion={null}
+        onDismiss={() => {
+          // Voluntary open: do not advance the cursor.
+        }}
+      />
       {open ? (
         <div className="absolute bottom-12 left-0 z-50 w-[300px] overflow-hidden rounded-xl border border-[var(--border-default)] bg-[var(--surface-card)] p-2 shadow-2xl">
           <div className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
@@ -96,7 +107,12 @@ export function AccountMenu({
           </div>
 
           <div className="my-2 h-px bg-[var(--border-subtle)]" />
-          <ReleaseNotesMenuItem onSelect={() => setOpen(false)} />
+          <ReleaseNotesMenuItem
+            onSelect={() => {
+              setOpen(false);
+              setNotesOpen(true);
+            }}
+          />
 
           {isAdmin ? (
             <>

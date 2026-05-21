@@ -1,51 +1,30 @@
 "use client"
 
 import { Sparkles } from "lucide-react"
-import { useState } from "react"
-
-import { ReleaseNotesDialog } from "./release-notes-dialog"
 
 /**
- * The "Release notes" entry in the sidebar account menu.
+ * Button row for the sidebar account menu's "Release notes" entry.
  *
- * Voluntary opens render the dialog in `mode="all"`: every release is
- * visible, newest first, and dismissing does NOT advance the user's
- * last_seen_version cursor (we only advance on the auto-popup path).
- * We pass `lastSeenVersion={null}` so the dialog skips the "Seen" pill
- * — when the user is browsing voluntarily the distinction is noise, not
- * signal.
+ * Important: this component is ONLY the trigger button. The dialog itself
+ * is rendered by the parent (AccountMenu) and lives outside the menu's
+ * conditional render block — otherwise closing the menu unmounts the
+ * dialog before it can open. State for the dialog therefore lives in the
+ * parent so it survives the menu's collapse.
  */
 export function ReleaseNotesMenuItem({
   onSelect,
 }: {
-  /** Called when the user clicks the menu row, so the parent menu can close. */
-  onSelect?: () => void
+  /** Fired when the row is clicked. The parent should close the menu and open the dialog. */
+  onSelect: () => void
 }) {
-  const [open, setOpen] = useState(false)
-
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          onSelect?.()
-          setOpen(true)
-        }}
-        className="flex h-9 w-full items-center gap-3 rounded-md px-3 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
-      >
-        <Sparkles className="h-4 w-4" aria-hidden="true" />
-        <span>Release notes</span>
-      </button>
-
-      <ReleaseNotesDialog
-        open={open}
-        onOpenChange={setOpen}
-        mode="all"
-        lastSeenVersion={null}
-        onDismiss={() => {
-          // No side effect — voluntary opens do not advance the cursor.
-        }}
-      />
-    </>
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex h-9 w-full items-center gap-3 rounded-md px-3 text-sm text-[var(--text-secondary)] transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
+    >
+      <Sparkles className="h-4 w-4" aria-hidden="true" />
+      <span>Release notes</span>
+    </button>
   )
 }
