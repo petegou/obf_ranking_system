@@ -113,6 +113,31 @@ choice from brainstorming. The reviewer didn't have that context.
 
 ---
 
+## Supabase JS client
+
+### PostgREST queries cap at 1000 rows by default.
+An unbounded `select()` returns at most 1000 rows silently. For any query
+that *could* return more (`fund_metrics` per-date, `funds`, ranking rows,
+etc.), either:
+
+1. Paginate explicitly via `.range(from, to)` in a loop until the page is
+   shorter than the page size (see `getOverviewRankingRows()` in
+   `frontend/lib/queries.ts` for the canonical pattern), OR
+2. Use a smaller distinct-set lookup (e.g., the `category_counts` view)
+   when you only need aggregates.
+
+Caught us twice: `getOverviewKpis()` was fixed in a prior session ("paged
+through Supabase's 1,000-row response cap"); the same bug survived in
+`recalculateAllRankings()` and silently produced 0 rankings for 15 of 23
+categories on the 2026-05-20 upload. Fix: commit `916fa94`.
+
+### When you fix a "cap" bug in one query, grep the codebase.
+The same anti-pattern almost always recurs. After fixing `recalculateAllRankings`,
+audit every other unbounded `supabase.from(...).select(...)` call to find
+the next time bomb.
+
+---
+
 ## Migrations & production data
 
 ### Additive-only migrations are safe to apply directly to prod.

@@ -137,12 +137,27 @@ export async function loadConfig(): Promise<ScoringConfig> {
 
 export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
   if (!asOfDate) {
-    const { data: dates } = await supabase
-      .from("fund_metrics")
-      .select("as_of_date")
-      .order("as_of_date");
-    const distinct = [...new Set((dates ?? []).map((r) => r.as_of_date))];
-    for (const date of distinct) {
+    // PostgREST caps at 1000 rows; page through fund_metrics to discover
+    // every distinct as_of_date across all snapshots (a config change
+    // triggers an all-dates recalc, so missing a snapshot here would
+    // silently leave it on stale scores).
+    const DATE_PAGE_SIZE = 1000;
+    const distinctSet = new Set<string>();
+    for (let from = 0; ; from += DATE_PAGE_SIZE) {
+      const to = from + DATE_PAGE_SIZE - 1;
+      const { data: page, error } = await supabase
+        .from("fund_metrics")
+        .select("as_of_date")
+        .order("as_of_date", { ascending: true })
+        .range(from, to);
+      if (error) throw new Error(error.message);
+      if (!page || page.length === 0) break;
+      for (const r of page) {
+        if (r.as_of_date) distinctSet.add(r.as_of_date);
+      }
+      if (page.length < DATE_PAGE_SIZE) break;
+    }
+    for (const date of distinctSet) {
       await recalculateAllRankings(date);
     }
     return;
@@ -179,15 +194,31 @@ export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
   const categories = [...categoriesSet];
 
   for (const category of categories) {
-    // Load all metrics + fund info for this category + date
-    const { data: rows } = await supabase
-      .from("fund_metrics")
-      .select("*, funds!inner(ticker, name, category)")
-      .eq("as_of_date", asOfDate)
-      .eq("funds.category", category)
-      .order("ticker");
+    // Load all metrics + fund info for this category + date. Today's
+    // largest category sits at ~660 funds, well under the 1000-row cap,
+    // but page anyway so we don't quietly truncate the day a single
+    // category crosses that threshold.
+    const PER_CATEGORY_PAGE_SIZE = 1000;
+    type MetricRow = Record<string, unknown> & {
+      funds: { ticker: string; name: string; category: string };
+    };
+    const rows: MetricRow[] = [];
+    for (let from = 0; ; from += PER_CATEGORY_PAGE_SIZE) {
+      const to = from + PER_CATEGORY_PAGE_SIZE - 1;
+      const { data: page, error } = await supabase
+        .from("fund_metrics")
+        .select("*, funds!inner(ticker, name, category)")
+        .eq("as_of_date", asOfDate)
+        .eq("funds.category", category)
+        .order("ticker")
+        .range(from, to);
+      if (error) throw new Error(error.message);
+      if (!page || page.length === 0) break;
+      rows.push(...(page as unknown as MetricRow[]));
+      if (page.length < PER_CATEGORY_PAGE_SIZE) break;
+    }
 
-    if (!rows || rows.length === 0) continue;
+    if (rows.length === 0) continue;
     const n = rows.length;
 
     // Flatten: merge fund_metrics fields with fund registry fields
