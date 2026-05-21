@@ -56,7 +56,7 @@ export function ReleaseNotesDialog({
       ? entries.length === 1
         ? "Here's what changed since you were last here."
         : `${entries.length} updates since you were last here.`
-      : "Every release the workbench has shipped, newest first."
+      : null
 
   const primaryLabel = mode === "unseen" ? "Got it" : "Close"
 
@@ -78,7 +78,7 @@ export function ReleaseNotesDialog({
           <DialogTitle>
             {mode === "unseen" ? entries[0].title : "Release notes"}
           </DialogTitle>
-          <DialogDescription>{headerCopy}</DialogDescription>
+          {headerCopy ? <DialogDescription>{headerCopy}</DialogDescription> : null}
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh] pr-2">
