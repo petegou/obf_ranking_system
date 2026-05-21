@@ -199,8 +199,12 @@ function GroupRow({ node, open, onToggle }: GroupRowProps) {
       onClick={onToggle}
       aria-expanded={open}
       title={node.label}
-      className="w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] transition-colors"
+      className="group relative w-full flex items-center gap-2 px-3 py-1.5 rounded-md text-sm text-[var(--text-secondary)] hover:bg-[var(--surface-muted)] transition-colors"
     >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-1 inset-y-[15%] rounded-full w-0.5 bg-[var(--surface-muted)] group-hover:bg-[var(--brand-primary)]/50 transition-colors"
+      />
       <span className="flex-1 min-w-0 truncate text-left">{node.label}</span>
       <span className="font-mono text-[11px] text-[var(--text-quaternary)] tabular-nums shrink-0">
         {node.count}
