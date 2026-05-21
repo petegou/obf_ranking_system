@@ -14,6 +14,7 @@ import {
   User,
 } from "lucide-react";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { ReleaseNotesMenuItem } from "@/components/release-notes-menu-item";
 import { useThemeMode, type ThemeMode } from "@/lib/theme";
 
 const THEME_OPTIONS: {
@@ -93,6 +94,9 @@ export function AccountMenu({
               );
             })}
           </div>
+
+          <div className="my-2 h-px bg-[var(--border-subtle)]" />
+          <ReleaseNotesMenuItem onSelect={() => setOpen(false)} />
 
           {isAdmin ? (
             <>

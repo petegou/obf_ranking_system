@@ -155,3 +155,13 @@ DROP TRIGGER IF EXISTS funds_updated_at ON funds;
 CREATE TRIGGER funds_updated_at
   BEFORE UPDATE ON funds
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ============================================================
+-- user_release_views — per-user "release notes seen" cursor
+-- (see migration 005 for full policy definitions)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS user_release_views (
+  user_id           uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  last_seen_version text NOT NULL,
+  updated_at        timestamptz NOT NULL DEFAULT now()
+);
