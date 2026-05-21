@@ -295,17 +295,19 @@ export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
     // ---- Market cap & turnover (nullable — score 0 if missing) ----
     const mktScores = funds.map((f) => {
       const aum = num(f.aum);
-      return aum !== null ? aum / cfg.market_cap_divisor : 0;
+      const aumInMillions = aum !== null ? aum / 1_000_000 : null;
+      return aumInMillions !== null ? aumInMillions / cfg.market_cap_divisor : 0;
     });
 
     const turnScores = funds.map((f) => {
       const to = num(f.turnover);
-      if (to === null || to <= cfg.turnover_threshold) return 0;
-      return to / cfg.turnover_divisor;
+      const turnoverPct = to !== null && Math.abs(to) <= 1 ? to * 100 : to;
+      if (turnoverPct === null || turnoverPct <= cfg.turnover_threshold) return 0;
+      return turnoverPct / cfg.turnover_divisor;
     });
 
     // ---- Final GPA ----
-    const gpaTotal = cfg.gpa_risk_weight + cfg.gpa_return_weight || 1;
+    const gpaTotal = 1;
     const gpaScores = funds.map((_, i) => {
       const rs  = riskScores[i]   ?? 0;
       const ret = returnScores[i] ?? 0;
@@ -351,8 +353,9 @@ export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
       fee_comp_score:             r4(feeScores[i]),
     }));
 
-    await supabase
+    const { error } = await supabase
       .from("fund_rankings")
       .upsert(rankingRows, { onConflict: "ticker,as_of_date" });
+    if (error) throw new Error(error.message);
   }
 }

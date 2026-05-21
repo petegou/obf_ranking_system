@@ -82,6 +82,12 @@ because backend-validation work was uncommitted in `frontend/lib/csv-import.ts`,
 the very file I was about to rewrite. A `git status` first would have
 surfaced it immediately.
 
+### Restart Next dev after scoring/API-route changes if rerank behavior looks stale.
+Next/Turbopack can leave old server chunks in `.next/dev` while newer chunks
+also exist. If `/api/config` rerank still reflects old formulas after source
+edits, restart the local dev server and confirm the formula page copy changed
+before trusting the button.
+
 ### Don't commit changes the user didn't ask to commit.
 Already in the root CLAUDE.md, but worth restating: never run `git commit`
 unless the user explicitly asks. If unclear, ask first.

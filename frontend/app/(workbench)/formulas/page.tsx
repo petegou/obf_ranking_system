@@ -313,16 +313,14 @@ export default function FormulasPage() {
       {/* Final GPA Formula */}
       <Section
         title="Final GPA Formula"
-        description="Total GPA = (Risk Score x W_risk + Return Score x W_return) / (W_risk + W_return) + Market Cap Score + Turnover Score"
+        description="Total GPA = (Risk Score x W_risk + Return Score x W_return) / 1.00 + Market Cap Score + Turnover Score"
       >
         <FormulaBlock>
           <p>
             GPA = (Risk x{" "}
             <strong>{config.gpa_risk_weight.toFixed(2)}</strong> + Return x{" "}
             <strong>{config.gpa_return_weight.toFixed(2)}</strong>) /{" "}
-            <strong>
-              {(config.gpa_risk_weight + config.gpa_return_weight).toFixed(2)}
-            </strong>{" "}
+            <strong>1.00</strong>{" "}
             + MktCap + Turnover
           </p>
         </FormulaBlock>
@@ -435,10 +433,10 @@ export default function FormulasPage() {
       {/* Market Cap */}
       <Section
         title="Market Cap Score"
-        description="Bonus score based on assets under management."
+        description="Bonus score based on assets under management, normalized to millions before applying the divisor."
       >
         <FormulaBlock>
-          Market Cap Score = AUM /{" "}
+          Market Cap Score = (AUM / 1,000,000) /{" "}
           <strong>{config.market_cap_divisor.toFixed(0)}</strong>
         </FormulaBlock>
         <NumberInput
