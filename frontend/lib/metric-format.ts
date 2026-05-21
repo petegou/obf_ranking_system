@@ -9,6 +9,12 @@ export function formatPercentMetric(value: number): string {
   })}%`;
 }
 
+export function formatReturnPercentMetric(value: number): string {
+  return `${(value * 100).toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+  })}%`;
+}
+
 export function formatPercentPointsMetric(value: number): string {
   return `${value.toLocaleString(undefined, {
     maximumFractionDigits: 2,

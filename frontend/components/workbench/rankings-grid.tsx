@@ -24,6 +24,7 @@ import {
   formatNumberMetric,
   formatPercentMetric,
   formatPriceMetric,
+  formatReturnPercentMetric,
 } from '@/lib/metric-format';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
@@ -334,6 +335,14 @@ function percentCellRenderer(
   const value = params.value;
   if (typeof value !== 'number') return '';
   return formatPercentMetric(value);
+}
+
+function returnPercentCellRenderer(
+  params: ValueFormatterParams<RankingRow, number | null>,
+) {
+  const value = params.value;
+  if (typeof value !== 'number') return '';
+  return formatReturnPercentMetric(value);
 }
 
 function currencyCellRenderer(
@@ -741,70 +750,70 @@ export function RankingsGrid({
           metricColumn(
             'QTD Return',
             'returnQtd',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             120,
             isHidden('returnQtd'),
           ),
           metricColumn(
             'YTD Return',
             'returnYtd',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             120,
             isHidden('returnYtd'),
           ),
           metricColumn(
             '1Y Return',
             'return1yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             120,
             isHidden('return1yr'),
           ),
           metricColumn(
             '3Y Return',
             'return3yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             120,
             isHidden('return3yr'),
           ),
           metricColumn(
             '5Y Return',
             'return5yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             120,
             isHidden('return5yr'),
           ),
           metricColumn(
             '10Y Return',
             'return10yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             120,
             isHidden('return10yr'),
           ),
           metricColumn(
             'Benchmark 1Y',
             'benchmarkReturn1yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             130,
             isHidden('benchmarkReturn1yr'),
           ),
           metricColumn(
             'Benchmark 3Y',
             'benchmarkReturn3yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             130,
             isHidden('benchmarkReturn3yr'),
           ),
           metricColumn(
             'Benchmark 5Y',
             'benchmarkReturn5yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             130,
             isHidden('benchmarkReturn5yr'),
           ),
           metricColumn(
             'Benchmark 10Y',
             'benchmarkReturn10yr',
-            percentCellRenderer,
+            returnPercentCellRenderer,
             135,
             isHidden('benchmarkReturn10yr'),
           ),

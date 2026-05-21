@@ -91,8 +91,7 @@ const VIEW_CONFIG = {
 >;
 
 function cumulativeReturnPercent(value: number) {
-  if (value === 0) return 0;
-  return Math.abs(value) <= 2 ? value * 100 : value;
+  return value * 100;
 }
 
 function annualizedReturnPercent(value: number, years: number) {
