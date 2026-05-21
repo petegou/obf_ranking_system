@@ -4,6 +4,10 @@ import { TopBar } from "./top-bar";
 export interface CategoryNavItem {
   category: string;
   count: number;
+  level_1: string | null;
+  level_2: string | null;
+  level_3: string | null;
+  level_4: string | null;
 }
 
 export function AppShell({

@@ -144,6 +144,19 @@ the next time bomb.
 
 ---
 
+## Supabase views
+
+### Always set `security_invoker = true` when creating or recreating a view.
+Without it, Supabase's `security_definer_view` advisor fires at **ERROR**
+level. `CREATE OR REPLACE VIEW` won't change the option silently — you
+have to add `WITH (security_invoker = true)` in the view definition (or
+`ALTER VIEW <name> SET (security_invoker = true)` after the fact). Caught
+us on migration 006 (`category_hierarchy`): the recreated `category_counts`
+view tripped the linter immediately. Fix: add the WITH clause + run the
+ALTER on the live view. Applies to every future view migration.
+
+---
+
 ## Migrations & production data
 
 ### Additive-only migrations are safe to apply directly to prod.

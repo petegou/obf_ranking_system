@@ -1,3 +1,37 @@
+# Sidebar Category Hierarchy (L1–L4) — Todo
+
+## Active — Group fund categories in sidebar by Excel-defined L1–L4 paths
+
+- [x] Migration 006 — `category_hierarchy` dimension table (59 rows from `~/Desktop/Book1.xlsx`) + `category_counts` view rewritten to LEFT JOIN it with `WITH (security_invoker = true)`.
+- [x] Applied migration 006 to production Supabase (additive + idempotent, no branch needed).
+- [x] `getCategoriesWithCounts` returns `level_1..level_4` alongside `category`/`count`.
+- [x] `CategoryNavItem` extended with the four nullable level fields.
+- [x] `Sidebar` builds a nested tree, renders collapsible internal nodes (chevron + aggregated count), keeps leaves on `/categories/<Assigned Category>`, single-leaf groups collapse to their leaf, persists expand/collapse via `useSyncExternalStore` against `localStorage` key `obf.sidebar.expanded.v1`, and auto-expands the path to the active leaf.
+
+## Verification
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed (existing multi-lockfile workspace-root warning unchanged).
+- DB checks via Supabase MCP:
+  - `category_hierarchy` table created with 59 seed rows.
+  - `category_counts` view returns L1–L4 alongside `category`/`fund_count`; spot-checked FI Muni Bonds tree, US Equities, Alternatives.
+  - `get_advisors` (security): no new ERROR; new view has `security_invoker = true`; remaining WARNs are all pre-existing tech debt.
+  - Found 2 DB categories absent from the Excel hierarchy: `Europe Large Cap`, `US Multi-Cap Core` — both will render under the "Uncategorized" L1 bucket as designed.
+
+### Browser smoke — `gated-on-user-action`
+
+The local dev server on `:3000` is running but auth-gated, so the following must be confirmed after sign-in:
+
+- [ ] Sidebar shows nested L1 groups with chevrons; counts on group rows equal the sum of descendant leaves.
+- [ ] Clicking a group expands/collapses; clicking a leaf navigates to `/categories/<Assigned Category>` with active styling unchanged.
+- [ ] Refresh preserves expand/collapse state.
+- [ ] Navigating directly to a leaf auto-expands the path to it.
+- [ ] FI Muni Bonds full tree (Fixed Income → Muni Bonds → National → High Yield/Long/Short/Municipal; → Single State → Long/Short/Municipal) matches the Excel.
+- [ ] `Europe Large Cap` and `US Multi-Cap Core` appear under an "Uncategorized" L1 group at the bottom.
+
+If the sidebar still renders flat after these changes, restart the Next dev server — Turbopack can hold stale server chunks (see `tasks/lessons.md`).
+
 # Updated Fund Rankings CSV — Todo
 
 ## Active — Switch importer + schema to the new official CSV format

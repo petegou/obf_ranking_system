@@ -10,24 +10,41 @@ import {
 const MAX_ROWS = 50000;
 const OVERVIEW_PAGE_SIZE = 1000;
 
+export interface CategoryWithCount {
+  category: string;
+  count: number;
+  level_1: string | null;
+  level_2: string | null;
+  level_3: string | null;
+  level_4: string | null;
+}
+
 /**
  * Fetch categories and their fund counts for the given as-of date in a single
- * query against the category_counts view. Returns categories sorted by name.
+ * query against the category_counts view. Returns categories sorted by name,
+ * with Level 1–4 hierarchy metadata for sidebar grouping.
  */
 export async function getCategoriesWithCounts(
   asOfDate?: string | null
-): Promise<{ category: string; count: number }[]> {
+): Promise<CategoryWithCount[]> {
   const date = await resolveAsOfDate(asOfDate ?? null);
   if (!date) return [];
 
   const { data, error } = await supabase
     .from("category_counts")
-    .select("category, fund_count")
+    .select("category, fund_count, level_1, level_2, level_3, level_4")
     .eq("as_of_date", date)
     .order("category");
   if (error) throw new Error(error.message);
 
-  return (data ?? []).map((r) => ({ category: r.category, count: r.fund_count }));
+  return (data ?? []).map((r) => ({
+    category: r.category,
+    count: r.fund_count,
+    level_1: r.level_1 ?? null,
+    level_2: r.level_2 ?? null,
+    level_3: r.level_3 ?? null,
+    level_4: r.level_4 ?? null,
+  }));
 }
 
 /** Distinct categories that have rankings, sorted by name. */
