@@ -37,7 +37,7 @@ export async function FundDetailPanel({
         <Tabs defaultValue="all">
           <TabsList className="w-full justify-start overflow-x-auto">
             <TabsTrigger value="all" className="min-w-14 flex-none text-xs">
-              All
+              Compare
             </TabsTrigger>
             {tickers.map((ticker) => (
               <TabsTrigger
@@ -58,7 +58,7 @@ export async function FundDetailPanel({
             </header>
             <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
               <h3 className="text-xs font-semibold text-[var(--text-secondary)]">
-                Efficiency curve
+                Risk &amp; return
               </h3>
               <CategoryScatterChart rows={rows} selectedTickers={tickers} />
             </section>
@@ -142,7 +142,7 @@ function SingleFundDetail({
             {totalScore.toFixed(1)}
           </span>
           <span className="text-xs text-[var(--text-tertiary)]">
-            of 100 GPA
+            GPA score
           </span>
         </div>
       </header>
@@ -153,7 +153,7 @@ function SingleFundDetail({
             Overview
           </TabsTrigger>
           <TabsTrigger value="peers" className="flex-1 text-xs">
-            vs Peers
+            Peers
           </TabsTrigger>
           <TabsTrigger value="market" className="flex-1 text-xs">
             Market
@@ -165,8 +165,8 @@ function SingleFundDetail({
             {[
               { label: "Risk Score", value: fund.risk_score },
               { label: "Return Score", value: fund.return_score },
-              { label: "Market Cap", value: fund.market_cap_score },
-              { label: "Turnover", value: fund.turnover_score },
+              { label: "Market Cap Score", value: fund.market_cap_score },
+              { label: "Turnover Score", value: fund.turnover_score },
             ].map(({ label, value }) => (
               <div
                 key={label}
@@ -187,7 +187,7 @@ function SingleFundDetail({
 
           <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
             <h3 className="mb-3 text-xs font-semibold text-[var(--text-secondary)]">
-              Risk Breakdown
+              Risk score breakdown
             </h3>
             <div className="space-y-2">
               {Object.entries(fund.risk_breakdown).map(([key, value]) => (
@@ -198,7 +198,7 @@ function SingleFundDetail({
 
           <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
             <h3 className="mb-3 text-xs font-semibold text-[var(--text-secondary)]">
-              Return Breakdown
+              Return score breakdown
             </h3>
             <div className="space-y-2">
               {Object.entries(fund.return_breakdown).map(([key, value]) => (
@@ -212,7 +212,7 @@ function SingleFundDetail({
           {peer && peer.metrics.length > 0 ? (
             <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
               <h3 className="mb-2 text-xs font-semibold text-[var(--text-secondary)]">
-                Score profile
+                Score vs category average
               </h3>
               <PeerComparisonChart metrics={peer.metrics} />
             </section>
@@ -223,7 +223,7 @@ function SingleFundDetail({
           )}
           <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-3">
             <h3 className="text-xs font-semibold text-[var(--text-secondary)]">
-              Efficiency curve
+              Risk &amp; return
             </h3>
             <CategoryScatterChart rows={rows} selectedTickers={[fund.ticker]} />
           </section>

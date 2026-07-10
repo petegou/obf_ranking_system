@@ -1,3 +1,25 @@
+# Scatter Analytics Experience — Todo
+
+## Active — Make fund comparison informational and responsive
+
+- [x] Make the fund detail dock adapt to available viewport width without crushing the rankings grid.
+- [x] Rework the risk/return chart hierarchy, selected-fund key, tooltips, and category context.
+- [x] Keep selected funds pinned above the full peer table and preserve unlimited selection.
+- [x] Correct misleading analytics labels and improve single-fund/multi-fund navigation.
+- [x] Verify typecheck, lint, build, and authenticated browser behavior at wide and narrow desktop widths.
+
+## Verification
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Authenticated browser checks passed on a fresh `localhost:3001` server:
+  - 1440px split layout retained 509px for rankings and gave 691px to the detail panel.
+  - 1000px layout used the dimmed overlay and kept the comparison readable.
+  - 3Y/5Y switching updated chart labels, peer-table columns, and rank context together.
+  - Tooltip uses a compact fund header, period badge, and aligned annualized risk, return, and GOV metrics without duplication.
+  - Six selected funds rendered with horizontally scrollable tabs and a compact `+2 more` chart key.
+
 # Snapshot Date Selector — Todo
 
 ## Planned — Let users switch between uploaded ranking snapshots

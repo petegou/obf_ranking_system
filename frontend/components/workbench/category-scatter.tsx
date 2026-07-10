@@ -15,6 +15,7 @@ import type { RankingRow } from "@/components/workbench/rankings-grid";
 import { useIsDarkMode } from "@/lib/use-color-scheme";
 import { SELECTION_COLORS } from "@/lib/selection-colors";
 import { formatPercentPointsMetric } from "@/lib/metric-format";
+import styles from "./category-scatter.module.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -22,6 +23,7 @@ type EfficiencyView = "3yr" | "5yr";
 type EfficiencyPoint = {
   ticker: string;
   name: string;
+  displayName: string;
   efficiencyRisk: number;
   efficiencyReturn: number;
   gov: number | null;
@@ -104,6 +106,78 @@ function annualizedStdDevPercent(value: number) {
   return value * Math.sqrt(TRADING_DAYS_PER_YEAR) * 100;
 }
 
+function median(values: number[]) {
+  if (values.length === 0) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const midpoint = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1
+    ? sorted[midpoint]
+    : (sorted[midpoint - 1] + sorted[midpoint]) / 2;
+}
+
+function securityLabel(ticker: string, name: string) {
+  return name ? `${ticker} - ${name}` : ticker;
+}
+
+function escapeTooltipHtml(value: string) {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character] ?? character
+  );
+}
+
+function renderEfficiencyTooltip(
+  datum: EfficiencyPoint,
+  markerColor: string,
+  periodLabel: string
+) {
+  const name = datum.name
+    ? `<div class="${styles.name}">${escapeTooltipHtml(datum.name)}</div>`
+    : "";
+  const risk = formatPercentPointsMetric(datum.efficiencyRisk);
+  const fundReturn = formatPercentPointsMetric(datum.efficiencyReturn);
+  const gov = datum.gov === null ? "-" : datum.gov.toFixed(2);
+
+  return `
+    <div class="${styles.tooltip}">
+      <div class="${styles.header}">
+        <div class="${styles.identity}">
+          <span class="${styles.swatch}" style="background-color: ${markerColor}"></span>
+          <div class="${styles.security}">
+            <div class="${styles.ticker}">${escapeTooltipHtml(datum.ticker)}</div>
+            ${name}
+          </div>
+        </div>
+        <span class="${styles.period}">${escapeTooltipHtml(periodLabel)}</span>
+      </div>
+      <div class="${styles.metrics}">
+        <div class="${styles.metric}">
+          <span class="${styles.metricLabel}">Risk</span>
+          <span class="${styles.metricValue}">${risk}</span>
+          <span class="${styles.metricNote}">Std dev</span>
+        </div>
+        <div class="${styles.metric}">
+          <span class="${styles.metricLabel}">Return</span>
+          <span class="${styles.metricValue}">${fundReturn}</span>
+          <span class="${styles.metricNote}">Annualized</span>
+        </div>
+        <div class="${styles.metric}">
+          <span class="${styles.metricLabel}">GOV</span>
+          <span class="${styles.metricValue}">${gov}</span>
+          <span class="${styles.metricNote}">Return / risk</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function buildEfficiencyPoints(
   rows: RankingRow[],
   view: EfficiencyView
@@ -119,6 +193,7 @@ function buildEfficiencyPoints(
     return [{
       ticker: row.ticker,
       name: row.name,
+      displayName: securityLabel(row.ticker, row.name),
       efficiencyRisk: annualRisk,
       efficiencyReturn: annualReturn,
       gov: annualRisk !== 0 ? annualReturn / annualRisk : null,
@@ -143,6 +218,9 @@ function SecurityCell(params: ICellRendererParams<RiskRewardRow>) {
       <span className="font-mono font-semibold text-[var(--text-primary)]">
         {point.ticker}
       </span>
+      {point.name ? (
+        <span className="text-[var(--text-tertiary)]">-</span>
+      ) : null}
       <span className="truncate text-[var(--text-secondary)]">
         {point.name}
       </span>
@@ -165,6 +243,7 @@ export function CategoryScatterChart({
   const bgDot = isDark ? "#9ca3af" : "#525252";
   const bgDotStroke = isDark ? "#d1d5db" : "#171717";
   const selectedStroke = isDark ? "#dbeafe" : "#0f172a";
+  const medianColor = isDark ? "#64748b" : "#a3a3a3";
 
   const selectedSet = useMemo(
     () => new Set(selectedTickers),
@@ -172,6 +251,21 @@ export function CategoryScatterChart({
   );
 
   const points = useMemo(() => buildEfficiencyPoints(rows, view), [rows, view]);
+  const selectedPoints = useMemo(
+    () =>
+      selectedTickers
+        .map((ticker) => points.find((point) => point.ticker === ticker))
+        .filter((point): point is EfficiencyPoint => Boolean(point)),
+    [points, selectedTickers]
+  );
+  const categoryMedianRisk = useMemo(
+    () => median(points.map((point) => point.efficiencyRisk)),
+    [points]
+  );
+  const categoryMedianReturn = useMemo(
+    () => median(points.map((point) => point.efficiencyReturn)),
+    [points]
+  );
 
   const options = useMemo<AgCartesianChartOptions>(() => {
     const byTicker = new Map<string, EfficiencyPoint[]>();
@@ -186,45 +280,35 @@ export function CategoryScatterChart({
       }
     }
 
-    const selectedSeries = selectedTickers.map((ticker, i) => ({
-      type: "scatter" as const,
-      data: byTicker.get(ticker) ?? [],
-      xKey: "efficiencyRisk",
-      yKey: "efficiencyReturn",
-      title: ticker,
-      fill: SELECTION_COLORS[i % SELECTION_COLORS.length],
-      size: 11,
-      stroke: selectedStroke,
-      strokeWidth: 1.5,
-      tooltip: {
-        renderer: ({ datum }: { datum: EfficiencyPoint }) => ({
-          heading: datum.ticker,
-          data: [
-            {
-              label: "Annualized Std Dev",
-              value: formatPercentPointsMetric(datum.efficiencyRisk),
-            },
-            {
-              label: "Annualized Return",
-              value: formatPercentPointsMetric(datum.efficiencyReturn),
-            },
-            {
-              label: "GOV",
-              value: datum.gov === null ? "-" : datum.gov.toFixed(2),
-            },
-          ],
-        }),
-      },
-    }));
+    const selectedSeries = selectedTickers.map((ticker, i) => {
+      const data = byTicker.get(ticker) ?? [];
+      return {
+        type: "scatter" as const,
+        data,
+        xKey: "efficiencyRisk",
+        yKey: "efficiencyReturn",
+        title: data[0]?.displayName ?? ticker,
+        fill: SELECTION_COLORS[i % SELECTION_COLORS.length],
+        size: 11,
+        stroke: selectedStroke,
+        strokeWidth: 1.5,
+        tooltip: {
+          renderer: ({ datum }: { datum: EfficiencyPoint }) =>
+            renderEfficiencyTooltip(
+              datum,
+              SELECTION_COLORS[i % SELECTION_COLORS.length],
+              viewConfig.label
+            ),
+        },
+      };
+    });
 
     return {
       theme: isDark ? "ag-default-dark" : "ag-default",
       background: { fill: "transparent" },
       padding: { top: 8, right: 8, bottom: 0, left: 0 },
       legend: {
-        position: "bottom",
-        spacing: 8,
-        item: { label: { color: labelColor } },
+        enabled: false,
       },
       series: [
         {
@@ -240,23 +324,8 @@ export function CategoryScatterChart({
           fillOpacity: isDark ? 0.78 : 0.58,
           strokeOpacity: isDark ? 0.35 : 0.18,
           tooltip: {
-            renderer: ({ datum }: { datum: EfficiencyPoint }) => ({
-              heading: datum.ticker,
-              data: [
-                {
-                  label: "Annualized Std Dev",
-                  value: formatPercentPointsMetric(datum.efficiencyRisk),
-                },
-                {
-                  label: "Annualized Return",
-                  value: formatPercentPointsMetric(datum.efficiencyReturn),
-                },
-                {
-                  label: "GOV",
-                  value: datum.gov === null ? "-" : datum.gov.toFixed(2),
-                },
-              ],
-            }),
+            renderer: ({ datum }: { datum: EfficiencyPoint }) =>
+              renderEfficiencyTooltip(datum, bgDot, viewConfig.label),
           },
         },
         ...selectedSeries,
@@ -268,6 +337,24 @@ export function CategoryScatterChart({
           title: { text: viewConfig.xTitle, color: labelColor },
           label: { color: labelColor, fontSize: 11 },
           gridLine: { style: [{ stroke: gridColor, lineDash: [2, 4] }] },
+          crossLines:
+            categoryMedianRisk === null
+              ? []
+              : [
+                  {
+                    type: "line",
+                    value: categoryMedianRisk,
+                    stroke: medianColor,
+                    strokeOpacity: 0.75,
+                    lineDash: [5, 4],
+                    label: {
+                      text: "Median risk",
+                      position: "top-right",
+                      color: labelColor,
+                      fontSize: 10,
+                    },
+                  },
+                ],
         },
         y: {
           type: "number",
@@ -275,25 +362,48 @@ export function CategoryScatterChart({
           title: { text: viewConfig.yTitle, color: labelColor },
           label: { color: labelColor, fontSize: 11 },
           gridLine: { style: [{ stroke: gridColor, lineDash: [2, 4] }] },
+          crossLines:
+            categoryMedianReturn === null
+              ? []
+              : [
+                  {
+                    type: "line",
+                    value: categoryMedianReturn,
+                    stroke: medianColor,
+                    strokeOpacity: 0.75,
+                    lineDash: [5, 4],
+                    label: {
+                      text: "Median return",
+                      position: "top-left",
+                      color: labelColor,
+                      fontSize: 10,
+                    },
+                  },
+                ],
         },
       },
     };
-  }, [points, selectedTickers, selectedSet, isDark, labelColor, gridColor, bgDot, bgDotStroke, selectedStroke, viewConfig]);
+  }, [points, selectedTickers, selectedSet, isDark, labelColor, gridColor, bgDot, bgDotStroke, selectedStroke, medianColor, categoryMedianRisk, categoryMedianReturn, viewConfig]);
 
   const tableRows = useMemo<RiskRewardRow[]>(
     () => {
-      const sorted = [...points].sort((a, b) => {
+      const ranked = [...points]
+        .sort((a, b) => b.efficiencyReturn - a.efficiencyReturn)
+        .map((point, index) => ({
+          ...point,
+          position: index + 1,
+          selectedIndex: selectedTickers.indexOf(point.ticker),
+        }));
+
+      return ranked.sort((a, b) => {
         const leftSelected = selectedSet.has(a.ticker);
         const rightSelected = selectedSet.has(b.ticker);
         if (leftSelected !== rightSelected) return leftSelected ? -1 : 1;
-        return b.efficiencyReturn - a.efficiencyReturn;
+        if (leftSelected && rightSelected) {
+          return a.selectedIndex - b.selectedIndex;
+        }
+        return a.position - b.position;
       });
-
-      return sorted.map((point, index) => ({
-        ...point,
-        position: index + 1,
-        selectedIndex: selectedTickers.indexOf(point.ticker),
-      }));
     },
     [points, selectedSet, selectedTickers]
   );
@@ -343,6 +453,7 @@ export function CategoryScatterChart({
       },
       {
         headerName: "GOV",
+        headerTooltip: "Annualized return divided by annualized standard deviation",
         field: "gov",
         width: 105,
         pinned: "right",
@@ -359,7 +470,10 @@ export function CategoryScatterChart({
 
   return (
     <div>
-      <div className="mb-3 flex justify-end">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="text-[10px] font-medium uppercase text-[var(--text-tertiary)]">
+          Annualized period
+        </span>
         <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-0.5">
           {(["3yr", "5yr"] as const).map((option) => (
             <button
@@ -377,10 +491,43 @@ export function CategoryScatterChart({
           ))}
         </div>
       </div>
+      <div className="mb-2 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--text-secondary)]">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-[var(--text-tertiary)] opacity-70" />
+          Category peers
+        </span>
+        {selectedPoints.slice(0, 4).map((point) => (
+          <span key={point.ticker} className="inline-flex items-center gap-1.5">
+            <span
+              className="size-2 rounded-full"
+              style={{
+                backgroundColor:
+                  SELECTION_COLORS[
+                    selectedTickers.indexOf(point.ticker) % SELECTION_COLORS.length
+                  ],
+              }}
+            />
+            <span className="font-mono font-semibold">{point.ticker}</span>
+          </span>
+        ))}
+        {selectedPoints.length > 4 ? (
+          <span className="font-mono text-[var(--text-tertiary)]">
+            +{selectedPoints.length - 4} more
+          </span>
+        ) : null}
+      </div>
       <div className="h-[300px]">
         <AgCharts options={options} />
       </div>
-      <div className="mt-4 h-72 overflow-hidden rounded-lg border border-[var(--border-subtle)]">
+      <div className="mt-3 flex items-baseline justify-between gap-3">
+        <div className="text-xs font-semibold text-[var(--text-secondary)]">
+          Category peers
+        </div>
+        <div className="text-[10px] text-[var(--text-tertiary)]">
+          Selected funds pinned · ranked by {viewConfig.label} return
+        </div>
+      </div>
+      <div className="mt-2 h-72 overflow-hidden rounded-md border border-[var(--border-subtle)]">
         <AgGridReact<RiskRewardRow>
           theme={isDark ? gridThemeDark : gridThemeLight}
           rowData={tableRows}

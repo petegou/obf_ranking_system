@@ -111,7 +111,7 @@ export default async function CategoryWorkbenchPage({
   const columnControlsId = `category-column-controls-${encodeURIComponent(category)}`;
 
   return (
-    <div className="h-full flex">
+    <div className="relative flex h-full overflow-hidden">
       <section className="flex-1 min-w-0 flex flex-col">
         <header className="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--border-subtle)] bg-[var(--surface-card)]">
           <div className="min-w-0">
