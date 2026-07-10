@@ -12,17 +12,19 @@ type FundDetail = NonNullable<Awaited<ReturnType<typeof getFundDetail>>>;
 export async function FundDetailPanel({
   tickers,
   rows,
+  asOfDate,
 }: {
   tickers: string[];
   rows: RankingRow[];
+  asOfDate: string | null;
 }) {
   if (tickers.length === 0) return null;
 
   const fundDetails = await Promise.all(
     tickers.map(async (ticker) => {
       const [fund, peer] = await Promise.all([
-        getFundDetail(ticker),
-        getFundPeerStats(ticker),
+        getFundDetail(ticker, asOfDate),
+        getFundPeerStats(ticker, asOfDate),
       ]);
       return { ticker, fund, peer };
     })
@@ -97,7 +99,7 @@ export async function FundDetailPanel({
 function MissingFund({ ticker }: { ticker: string }) {
   return (
     <div className="text-sm text-[var(--text-tertiary)]">
-      Fund {ticker} not found in current rankings.
+      Fund {ticker} not found in the selected ranking snapshot.
     </div>
   );
 }

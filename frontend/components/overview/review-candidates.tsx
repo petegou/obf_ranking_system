@@ -4,8 +4,10 @@ import { scoreColorVar } from "@/lib/score-color";
 
 export function ReviewCandidates({
   rows,
+  selectedDate,
 }: {
   rows: OverviewReviewCandidate[];
+  selectedDate: string | null;
 }) {
   return (
     <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4">
@@ -19,9 +21,12 @@ export function ReviewCandidates({
       </div>
       <ul className="mt-3 divide-y divide-[var(--border-subtle)]">
         {rows.map((row) => {
+          const params = new URLSearchParams();
+          if (selectedDate) params.set("date", selectedDate);
+          params.set("fund", row.ticker);
           const href = `/categories/${encodeURIComponent(
             row.category
-          )}?fund=${encodeURIComponent(row.ticker)}`;
+          )}?${params.toString()}`;
           const color = scoreColorVar(row.totalGpaScore);
 
           return (

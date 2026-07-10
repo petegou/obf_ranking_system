@@ -1,3 +1,26 @@
+# Snapshot Date Selector — Todo
+
+## Planned — Let users switch between uploaded ranking snapshots
+
+- [x] Add shared snapshot date helpers and date-aware query helpers.
+- [x] Add API support for snapshot lists, date-aware sidebar categories, and date-aware fund search.
+- [x] Add top-bar snapshot selector with default `Latest (resolved date)` plus explicit `date=YYYY-MM-DD` options.
+- [x] Make the persistent sidebar refetch category counts/hierarchy for the selected date.
+- [x] Pass the selected date through overview, category pages, fund detail panel, and full fund pages.
+- [x] Preserve `date` during sidebar navigation, breadcrumbs, fund search, and grid fund selection.
+- [x] Add empty states for snapshot/category/fund combinations with no rows.
+- [x] Verify typecheck, lint, and build.
+- [ ] Authenticated browser smoke.
+
+## Verification
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Browser smoke is `gated-on-user-action`: local routes are auth-gated and no authenticated browser session/credentials were available in this run.
+
+> Plan: `docs/superpowers/plans/2026-07-01-snapshot-date-selector.md`
+
 # Sidebar Category Hierarchy (L1–L4) — Todo
 
 ## Active — Group fund categories in sidebar by Excel-defined L1–L4 paths

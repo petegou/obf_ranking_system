@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
+import { snapshotDateFromSearchParams } from "@/lib/snapshot-date";
 
 interface SearchResult {
   ticker: string;
@@ -19,7 +20,9 @@ export function FundSearch() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const containerRef = useRef<HTMLDivElement>(null);
+  const selectedDate = snapshotDateFromSearchParams(searchParams);
 
   useEffect(() => {
     if (!query.trim()) {
@@ -29,8 +32,10 @@ export function FundSearch() {
     const controller = new AbortController();
     const handle = window.setTimeout(async () => {
       try {
+        const params = new URLSearchParams({ q: query });
+        if (selectedDate) params.set("date", selectedDate);
         const res = await fetch(
-          `/api/funds/search?q=${encodeURIComponent(query)}`,
+          `/api/funds/search?${params.toString()}`,
           { signal: controller.signal }
         );
         if (!res.ok) return;
@@ -46,7 +51,7 @@ export function FundSearch() {
       controller.abort();
       window.clearTimeout(handle);
     };
-  }, [query]);
+  }, [query, selectedDate]);
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -65,7 +70,12 @@ export function FundSearch() {
   function go(ticker: string) {
     setOpen(false);
     setQuery("");
-    router.push(`/funds/${encodeURIComponent(ticker)}`);
+    const params = new URLSearchParams();
+    if (selectedDate) params.set("date", selectedDate);
+    const queryString = params.toString();
+    router.push(
+      `/funds/${encodeURIComponent(ticker)}${queryString ? `?${queryString}` : ""}`
+    );
   }
 
   function handleQueryChange(value: string) {

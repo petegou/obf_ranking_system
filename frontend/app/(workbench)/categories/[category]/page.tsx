@@ -5,12 +5,13 @@ import { PanelMotion } from "@/components/workbench/panel-motion";
 import { RankingsGrid, type RankingRow } from "@/components/workbench/rankings-grid";
 import { getRankingsForCategory } from "@/lib/queries";
 import { numOrNull } from "@/lib/rankings-utils";
+import { snapshotDateFromSearchParams } from "@/lib/snapshot-date";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ category: string }>;
-  searchParams: Promise<{ fund?: string | string[] }>;
+  searchParams: Promise<{ fund?: string | string[]; date?: string | string[] }>;
 }
 
 export default async function CategoryWorkbenchPage({
@@ -18,9 +19,11 @@ export default async function CategoryWorkbenchPage({
   searchParams,
 }: PageProps) {
   const { category: rawCategory } = await params;
-  const { fund } = await searchParams;
+  const rawSearchParams = await searchParams;
+  const { fund } = rawSearchParams;
+  const asOfDate = snapshotDateFromSearchParams(rawSearchParams);
   const category = decodeURIComponent(rawCategory);
-  const result = await getRankingsForCategory(category);
+  const result = await getRankingsForCategory(category, asOfDate);
 
   const rows: RankingRow[] = result.rankings.map((ranking) => ({
     rank: ranking.rank,
@@ -104,7 +107,7 @@ export default async function CategoryWorkbenchPage({
     ? Array.isArray(fund) ? fund : [fund]
     : [];
 
-  const panelKey = [...selectedTickers].sort().join(",");
+  const panelKey = [result.as_of_date ?? "latest", ...selectedTickers].sort().join(",");
   const columnControlsId = `category-column-controls-${encodeURIComponent(category)}`;
 
   return (
@@ -114,7 +117,7 @@ export default async function CategoryWorkbenchPage({
           <div className="min-w-0">
             <h1 className="text-base font-semibold tracking-tight">{category}</h1>
             <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
-              {rows.length} funds ranked by Oak Bridge multi-factor GPA -
+              {rows.length} funds ranked as of {result.as_of_date ?? "the latest snapshot"} -
               decision support only.
             </p>
           </div>
@@ -124,11 +127,17 @@ export default async function CategoryWorkbenchPage({
           />
         </header>
         <div className="flex-1 min-h-0">
-          <RankingsGrid
-            rows={rows}
-            category={category}
-            columnControlsId={columnControlsId}
-          />
+          {rows.length === 0 ? (
+            <div className="flex h-full items-center justify-center px-6 py-10 text-sm text-[var(--text-tertiary)]">
+              No rankings found for {category} in the selected snapshot.
+            </div>
+          ) : (
+            <RankingsGrid
+              rows={rows}
+              category={category}
+              columnControlsId={columnControlsId}
+            />
+          )}
         </div>
       </section>
       <FundDetailDock selectedTickers={selectedTickers}>
@@ -137,7 +146,11 @@ export default async function CategoryWorkbenchPage({
           fallback={<div className="p-4 flex-1 min-h-0 text-xs">Loading...</div>}
         >
           <PanelMotion key={panelKey}>
-            <FundDetailPanel tickers={selectedTickers} rows={rows} />
+            <FundDetailPanel
+              tickers={selectedTickers}
+              rows={rows}
+              asOfDate={result.as_of_date}
+            />
           </PanelMotion>
         </Suspense>
       </FundDetailDock>

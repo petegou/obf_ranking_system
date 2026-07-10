@@ -1,9 +1,11 @@
-import { NextResponse } from "next/server";
-import { getCategories } from "@/lib/queries";
+import { NextRequest, NextResponse } from "next/server";
+import { getCategoriesWithCounts } from "@/lib/queries";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const dateParam = request.nextUrl.searchParams.get("date");
+
   try {
-    const categories = await getCategories();
+    const categories = await getCategoriesWithCounts(dateParam);
     return NextResponse.json({ categories });
   } catch (e) {
     return NextResponse.json(

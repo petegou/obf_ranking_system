@@ -4,8 +4,10 @@ import { scoreColorVar } from "@/lib/score-color";
 
 export function CategoryOpportunityTable({
   rows,
+  selectedDate,
 }: {
   rows: OverviewCategorySummary[];
+  selectedDate: string | null;
 }) {
   return (
     <section className="rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-card)] p-4">
@@ -33,12 +35,15 @@ export function CategoryOpportunityTable({
           </thead>
           <tbody className="divide-y divide-[var(--border-subtle)]">
             {rows.map((row) => {
-              const categoryHref = `/categories/${encodeURIComponent(
-                row.category
-              )}`;
-              const leaderHref = `${categoryHref}?fund=${encodeURIComponent(
-                row.leaderTicker
-              )}`;
+              const categoryParams = new URLSearchParams();
+              if (selectedDate) categoryParams.set("date", selectedDate);
+              const categoryQuery = categoryParams.toString();
+              const categoryHref = `/categories/${encodeURIComponent(row.category)}${
+                categoryQuery ? `?${categoryQuery}` : ""
+              }`;
+              const leaderParams = new URLSearchParams(categoryParams);
+              leaderParams.set("fund", row.leaderTicker);
+              const leaderHref = `/categories/${encodeURIComponent(row.category)}?${leaderParams.toString()}`;
               const highColor = scoreColorVar(row.maxGpaScore);
 
               return (

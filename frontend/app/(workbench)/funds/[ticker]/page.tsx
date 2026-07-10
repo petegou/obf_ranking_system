@@ -2,22 +2,27 @@ import Link from "next/link";
 import { ScoreBar } from "@/components/score-bar";
 import { getFundDetail } from "@/lib/queries";
 import { scoreColorVar } from "@/lib/score-color";
+import { snapshotDateFromSearchParams } from "@/lib/snapshot-date";
 
 export const dynamic = "force-dynamic";
 
 export default async function FundDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ ticker: string }>;
+  searchParams: Promise<{ date?: string | string[] }>;
 }) {
   const { ticker } = await params;
-  const fund = await getFundDetail(ticker);
+  const asOfDate = snapshotDateFromSearchParams(await searchParams);
+  const fund = await getFundDetail(ticker, asOfDate);
+  const overviewHref = asOfDate ? `/?date=${encodeURIComponent(asOfDate)}` : "/";
 
   if (!fund) {
     return (
       <div className="max-w-7xl mx-auto px-6 py-10">
         <Link
-          href="/"
+          href={overviewHref}
           className="text-sm font-medium no-underline hover:underline"
           style={{ color: "var(--brand-primary)" }}
         >
@@ -37,11 +42,16 @@ export default async function FundDetailPage({
     );
   }
 
+  const categoryHref = `/categories/${encodeURIComponent(fund.category)}${
+    asOfDate ? `?date=${encodeURIComponent(asOfDate)}` : ""
+  }`;
+  const totalScore = fund.total_gpa_score ?? 0;
+
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <div className="mb-6 flex items-center gap-3">
         <Link
-          href={`/categories/${encodeURIComponent(fund.category)}`}
+          href={categoryHref}
           className="text-sm font-medium no-underline hover:underline"
           style={{ color: "var(--brand-primary)" }}
         >
@@ -64,7 +74,8 @@ export default async function FundDetailPage({
             </h1>
             <p style={{ color: "var(--text-tertiary)" }}>{fund.name}</p>
             <p className="text-sm mt-1" style={{ color: "var(--text-tertiary)" }}>
-              {fund.category} &middot; Rank #{fund.rank}
+              {fund.category} &middot; Rank #{fund.rank ?? "-"} &middot; As of{" "}
+              {fund.as_of_date}
             </p>
           </div>
           <div className="text-center sm:text-right">
@@ -74,10 +85,10 @@ export default async function FundDetailPage({
             <div
               className="text-4xl font-bold font-mono"
               style={{
-                color: scoreColorVar(fund.total_gpa_score),
+                color: scoreColorVar(totalScore),
               }}
             >
-              {fund.total_gpa_score.toFixed(2)}
+              {totalScore.toFixed(2)}
             </div>
           </div>
         </div>
@@ -103,7 +114,7 @@ export default async function FundDetailPage({
               {label}
             </div>
             <div className="text-xl font-bold font-mono">
-              {value.toFixed(2)}
+              {(value ?? 0).toFixed(2)}
             </div>
           </div>
         ))}

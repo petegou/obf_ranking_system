@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
+import type { RankingSnapshot } from "@/lib/queries";
 import { FundSearch } from "./fund-search";
+import { SnapshotSelector } from "./snapshot-selector";
 
 interface Crumb {
   label: string;
@@ -43,9 +45,19 @@ function parseCrumbs(pathname: string): Crumb[] {
   return crumbs;
 }
 
-export function TopBar() {
+export function TopBar({ snapshots }: { snapshots: RankingSnapshot[] }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const crumbs = parseCrumbs(pathname);
+
+  function withCurrentDate(href: string) {
+    const date = searchParams.get("date");
+    if (!date) return href;
+    const [path, query = ""] = href.split("?");
+    const params = new URLSearchParams(query);
+    params.set("date", date);
+    return `${path}?${params.toString()}`;
+  }
 
   return (
     <header className="h-11 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--surface-card)] flex items-center px-4 gap-3">
@@ -63,7 +75,7 @@ export function TopBar() {
               )}
               {c.href && !isLast ? (
                 <Link
-                  href={c.href}
+                  href={withCurrentDate(c.href)}
                   className="text-[var(--text-secondary)] no-underline hover:text-[var(--text-primary)] truncate"
                 >
                   {c.label}
@@ -84,6 +96,7 @@ export function TopBar() {
         })}
       </nav>
       <div className="flex-1" />
+      <SnapshotSelector snapshots={snapshots} />
       <FundSearch />
     </header>
   );

@@ -10,6 +10,41 @@ import {
 const MAX_ROWS = 50000;
 const OVERVIEW_PAGE_SIZE = 1000;
 
+export interface RankingSnapshot {
+  asOfDate: string;
+  fundCount: number;
+}
+
+export async function getRankingSnapshots(): Promise<RankingSnapshot[]> {
+  const byDate = new Map<string, number>();
+
+  for (let from = 0; ; from += OVERVIEW_PAGE_SIZE) {
+    const to = from + OVERVIEW_PAGE_SIZE - 1;
+    const { data, error } = await supabase
+      .from("category_counts")
+      .select("as_of_date, fund_count")
+      .order("as_of_date", { ascending: false })
+      .range(from, to);
+
+    if (error) throw new Error(error.message);
+    const page = data ?? [];
+
+    for (const row of page) {
+      if (!row.as_of_date) continue;
+      byDate.set(
+        row.as_of_date,
+        (byDate.get(row.as_of_date) ?? 0) + (row.fund_count ?? 0)
+      );
+    }
+
+    if (page.length < OVERVIEW_PAGE_SIZE) break;
+  }
+
+  return Array.from(byDate.entries())
+    .map(([asOfDate, fundCount]) => ({ asOfDate, fundCount }))
+    .sort((a, b) => b.asOfDate.localeCompare(a.asOfDate));
+}
+
 export interface CategoryWithCount {
   category: string;
   count: number;
@@ -156,6 +191,7 @@ export async function getFundDetail(ticker: string, asOfDate?: string | null) {
       .eq("as_of_date", date)
       .single(),
   ]);
+  if (!ranking || !metrics) return null;
 
   return {
     ticker: fund.ticker,
@@ -240,6 +276,11 @@ export interface OverviewDecisionDashboard {
   candidates: OverviewReviewCandidate[];
 }
 
+export interface OverviewPageData {
+  kpis: OverviewKpis;
+  dashboard: OverviewDecisionDashboard;
+}
+
 interface OverviewRankingRow {
   ticker: string;
   name: string;
@@ -304,19 +345,22 @@ async function getOverviewRankingRows(
   }
 }
 
-export async function getOverviewKpis(): Promise<OverviewKpis> {
-  const date = await resolveAsOfDate(null);
+export async function getOverviewKpis(
+  asOfDate?: string | null
+): Promise<OverviewKpis> {
+  const date = await resolveAsOfDate(asOfDate ?? null);
   if (!date) {
-    return {
-      totalFunds: 0,
-      categoryCount: 0,
-      avgGpaScore: 0,
-      pctScoringSeventyOrAbove: 0,
-      asOfDate: null,
-    };
+    return emptyOverviewKpis();
   }
 
   const rows = await getOverviewRankingRows(date);
+  return buildOverviewKpis(date, rows);
+}
+
+function buildOverviewKpis(
+  date: string,
+  rows: OverviewRankingRow[]
+): OverviewKpis {
   const categories = new Set<string>();
   let scoreSum = 0;
   let scoreSeventy = 0;
@@ -334,6 +378,26 @@ export async function getOverviewKpis(): Promise<OverviewKpis> {
     pctScoringSeventyOrAbove:
       rows.length > 0 ? (scoreSeventy / rows.length) * 100 : 0,
     asOfDate: date,
+  };
+}
+
+function emptyOverviewKpis(): OverviewKpis {
+  return {
+    totalFunds: 0,
+    categoryCount: 0,
+    avgGpaScore: 0,
+    pctScoringSeventyOrAbove: 0,
+    asOfDate: null,
+  };
+}
+
+function buildOverviewDashboard(
+  rows: OverviewRankingRow[]
+): OverviewDecisionDashboard {
+  return {
+    distribution: buildOverviewDistribution(rows),
+    categories: buildOverviewCategorySummaries(rows),
+    candidates: buildOverviewReviewCandidates(rows),
   };
 }
 
@@ -464,15 +528,31 @@ function buildOverviewReviewCandidates(
   return Array.from(candidates.values()).slice(0, 8);
 }
 
-export async function getOverviewDecisionDashboard(): Promise<OverviewDecisionDashboard> {
-  const date = await resolveAsOfDate(null);
+export async function getOverviewDecisionDashboard(
+  asOfDate?: string | null
+): Promise<OverviewDecisionDashboard> {
+  const date = await resolveAsOfDate(asOfDate ?? null);
   if (!date) return { distribution: [], categories: [], candidates: [] };
   const rows = await getOverviewRankingRows(date);
 
+  return buildOverviewDashboard(rows);
+}
+
+export async function getOverviewPageData(
+  asOfDate?: string | null
+): Promise<OverviewPageData> {
+  const date = await resolveAsOfDate(asOfDate ?? null);
+  if (!date) {
+    return {
+      kpis: emptyOverviewKpis(),
+      dashboard: { distribution: [], categories: [], candidates: [] },
+    };
+  }
+
+  const rows = await getOverviewRankingRows(date);
   return {
-    distribution: buildOverviewDistribution(rows),
-    categories: buildOverviewCategorySummaries(rows),
-    candidates: buildOverviewReviewCandidates(rows),
+    kpis: buildOverviewKpis(date, rows),
+    dashboard: buildOverviewDashboard(rows),
   };
 }
 
@@ -486,8 +566,10 @@ export interface FundScatterRow {
   marketCapScore: number;
 }
 
-export async function getAllFundsForScatter(): Promise<FundScatterRow[]> {
-  const date = await resolveAsOfDate(null);
+export async function getAllFundsForScatter(
+  asOfDate?: string | null
+): Promise<FundScatterRow[]> {
+  const date = await resolveAsOfDate(asOfDate ?? null);
   if (!date) return [];
 
   const { data, error } = await supabase
@@ -541,9 +623,10 @@ export interface FundPeerStats {
 }
 
 export async function getFundPeerStats(
-  ticker: string
+  ticker: string,
+  asOfDate?: string | null
 ): Promise<FundPeerStats | null> {
-  const date = await resolveAsOfDate(null, ticker);
+  const date = await resolveAsOfDate(asOfDate ?? null, ticker);
   if (!date) return null;
 
   const { data: fund } = await supabase
@@ -630,8 +713,10 @@ export interface HighestPerCategoryRow {
   totalGpaScore: number;
 }
 
-export async function getHighestPerCategory(): Promise<HighestPerCategoryRow[]> {
-  const date = await resolveAsOfDate(null);
+export async function getHighestPerCategory(
+  asOfDate?: string | null
+): Promise<HighestPerCategoryRow[]> {
+  const date = await resolveAsOfDate(asOfDate ?? null);
   if (!date) return [];
 
   const { data, error } = await supabase

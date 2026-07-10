@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { ComponentType } from "react";
 import {
@@ -41,6 +42,15 @@ export function AccountMenu({
   const [notesOpen, setNotesOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const { mode, setMode } = useThemeMode();
+  const searchParams = useSearchParams();
+
+  function withCurrentDate(href: string) {
+    const date = searchParams.get("date");
+    if (!date) return href;
+    const params = new URLSearchParams();
+    params.set("date", date);
+    return `${href}?${params.toString()}`;
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -118,7 +128,7 @@ export function AccountMenu({
             <>
               <div className="my-2 h-px bg-[var(--border-subtle)]" />
               <Link
-                href="/upload"
+                href={withCurrentDate("/upload")}
                 onClick={() => setOpen(false)}
                 className="flex h-9 items-center gap-3 rounded-md px-3 text-sm text-[var(--text-secondary)] no-underline transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
               >
@@ -126,7 +136,7 @@ export function AccountMenu({
                 <span>Upload files</span>
               </Link>
               <Link
-                href="/formulas"
+                href={withCurrentDate("/formulas")}
                 onClick={() => setOpen(false)}
                 className="flex h-9 items-center gap-3 rounded-md px-3 text-sm text-[var(--text-secondary)] no-underline transition-colors hover:bg-[var(--surface-muted)] hover:text-[var(--text-primary)]"
               >

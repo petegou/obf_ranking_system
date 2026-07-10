@@ -2,18 +2,18 @@ import { CategoryOpportunityTable } from '@/components/overview/category-opportu
 import { KpiStrip } from '@/components/overview/kpi-strip';
 import { ReviewCandidates } from '@/components/overview/review-candidates';
 import { ScoreDistribution } from '@/components/overview/score-distribution';
-import {
-  getOverviewDecisionDashboard,
-  getOverviewKpis,
-} from '@/lib/queries';
+import { getOverviewPageData } from '@/lib/queries';
+import { snapshotDateFromSearchParams } from '@/lib/snapshot-date';
 
 export const dynamic = 'force-dynamic';
 
-export default async function OverviewPage() {
-  const [kpis, dashboard] = await Promise.all([
-    getOverviewKpis(),
-    getOverviewDecisionDashboard(),
-  ]);
+export default async function OverviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string | string[] }>;
+}) {
+  const asOfDate = snapshotDateFromSearchParams(await searchParams);
+  const { kpis, dashboard } = await getOverviewPageData(asOfDate);
 
   return (
     <div className="mx-auto flex h-full max-w-7xl flex-col gap-6 p-8">
@@ -27,10 +27,13 @@ export default async function OverviewPage() {
       <ScoreDistribution rows={dashboard.distribution} />
       <div className="grid min-h-0 flex-1 grid-cols-1 gap-6 xl:grid-cols-5">
         <div className="xl:col-span-3">
-          <CategoryOpportunityTable rows={dashboard.categories} />
+          <CategoryOpportunityTable
+            rows={dashboard.categories}
+            selectedDate={asOfDate}
+          />
         </div>
         <div className="xl:col-span-2">
-          <ReviewCandidates rows={dashboard.candidates} />
+          <ReviewCandidates rows={dashboard.candidates} selectedDate={asOfDate} />
         </div>
       </div>
     </div>

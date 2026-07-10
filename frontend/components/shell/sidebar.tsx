@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMemo, useSyncExternalStore } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { snapshotDateFromSearchParams } from "@/lib/snapshot-date";
 import { AccountMenu } from "./account-menu";
 import type { CategoryNavItem } from "./app-shell";
 
@@ -217,21 +218,28 @@ interface CategoryTreeProps {
   nodes: TreeNode[];
   expanded: Record<string, boolean>;
   onToggle: (path: string) => void;
+  withCurrentDate: (href: string) => string;
 }
 
-function CategoryTree({ nodes, expanded, onToggle }: CategoryTreeProps) {
+function CategoryTree({
+  nodes,
+  expanded,
+  onToggle,
+  withCurrentDate,
+}: CategoryTreeProps) {
   return (
     <>
       {nodes.map((node) => {
         if (node.kind === "leaf") {
-          const href = `/categories/${encodeURIComponent(node.category)}`;
+          const categoryPath = `/categories/${encodeURIComponent(node.category)}`;
+          const href = withCurrentDate(categoryPath);
           return (
             <NavLink
               key={`leaf:${node.category}`}
               href={href}
               label={node.label}
               count={node.count}
-              isActive={(p) => p === href}
+              isActive={(p) => p === categoryPath}
             />
           );
         }
@@ -249,6 +257,7 @@ function CategoryTree({ nodes, expanded, onToggle }: CategoryTreeProps) {
                   nodes={node.children}
                   expanded={expanded}
                   onToggle={onToggle}
+                  withCurrentDate={withCurrentDate}
                 />
               </div>
             )}
@@ -315,11 +324,41 @@ function writeExpansion(next: Record<string, boolean>) {
   for (const fn of expansionListeners) fn();
 }
 
-export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
+export function Sidebar({
+  initialCategories,
+}: {
+  initialCategories: CategoryNavItem[];
+}) {
   const { isAdmin, user, signOut } = useAuth();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedDate = snapshotDateFromSearchParams(searchParams);
+  const [categories, setCategories] = useState(initialCategories);
 
   const tree = useMemo(() => buildCategoryTree(categories), [categories]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    const params = new URLSearchParams();
+    if (selectedDate) params.set("date", selectedDate);
+    const query = params.toString();
+
+    fetch(`/api/categories${query ? `?${query}` : ""}`, {
+      signal: controller.signal,
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error("Unable to load categories.");
+        return res.json() as Promise<{ categories?: CategoryNavItem[] }>;
+      })
+      .then((body) => {
+        setCategories(body.categories ?? []);
+      })
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+      });
+
+    return () => controller.abort();
+  }, [selectedDate]);
 
   const activeCategory = useMemo(() => {
     const match = pathname.match(/^\/categories\/([^/]+)/);
@@ -351,6 +390,15 @@ export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
     writeExpansion({ ...current, [path]: !current[path] });
   };
 
+  function withCurrentDate(href: string) {
+    const date = searchParams.get("date");
+    if (!date) return href;
+    const [path, query = ""] = href.split("?");
+    const params = new URLSearchParams(query);
+    params.set("date", date);
+    return `${path}?${params.toString()}`;
+  }
+
   return (
     <aside className="w-60 shrink-0 border-r border-[var(--border-subtle)] bg-[var(--surface-card)] flex flex-col">
       <div className="shrink-0 px-4 py-4 border-b border-[var(--border-subtle)]">
@@ -367,20 +415,42 @@ export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
 
       <nav className="flex-1 overflow-y-auto px-2 py-2">
         <SectionLabel>Workspace</SectionLabel>
-        <NavLink href="/" label="Overview" isActive={(p) => p === "/"} />
-
-        <SectionLabel>Categories</SectionLabel>
-        <CategoryTree
-          nodes={tree}
-          expanded={expanded}
-          onToggle={handleToggle}
+        <NavLink
+          href={withCurrentDate("/")}
+          label="Overview"
+          isActive={(p) => p === "/"}
         />
 
+        <SectionLabel>Categories</SectionLabel>
+        {tree.length === 0 ? (
+          <div className="px-3 py-2 text-xs text-[var(--text-tertiary)]">
+            No categories in this snapshot.
+          </div>
+        ) : null}
+        {tree.length > 0 && (
+          <CategoryTree
+            nodes={tree}
+            expanded={expanded}
+            onToggle={handleToggle}
+            withCurrentDate={withCurrentDate}
+          />
+        )}
+
         <SectionLabel>Analysis</SectionLabel>
-        <NavLink href="/compare" label="Compare" disabled isActive={() => false} />
-        <NavLink href="/scatter" label="Scatter" disabled isActive={() => false} />
         <NavLink
-          href="/distribution"
+          href={withCurrentDate("/compare")}
+          label="Compare"
+          disabled
+          isActive={() => false}
+        />
+        <NavLink
+          href={withCurrentDate("/scatter")}
+          label="Scatter"
+          disabled
+          isActive={() => false}
+        />
+        <NavLink
+          href={withCurrentDate("/distribution")}
           label="Distribution"
           disabled
           isActive={() => false}
@@ -390,12 +460,12 @@ export function Sidebar({ categories }: { categories: CategoryNavItem[] }) {
           <>
             <SectionLabel>Admin</SectionLabel>
             <NavLink
-              href="/formulas"
+              href={withCurrentDate("/formulas")}
               label="Formulas"
               isActive={(p) => p === "/formulas"}
             />
             <NavLink
-              href="/upload"
+              href={withCurrentDate("/upload")}
               label="Upload"
               isActive={(p) => p === "/upload"}
             />
