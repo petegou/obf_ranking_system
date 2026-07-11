@@ -433,11 +433,12 @@ export default function FormulasPage() {
       {/* Market Cap */}
       <Section
         title="Market Cap Score"
-        description="Bonus score based on assets under management, normalized to millions before applying the divisor."
+        description="Bonus score based on assets under management, normalized to millions and capped at 10 points."
       >
         <FormulaBlock>
-          Market Cap Score = (AUM / 1,000,000) /{" "}
-          <strong>{config.market_cap_divisor.toFixed(0)}</strong>
+          Market Cap Score = MIN((AUM / 1,000,000) /{" "}
+          <strong>{config.market_cap_divisor.toFixed(0)}</strong>,{" "}
+          <strong>10</strong>)
         </FormulaBlock>
         <NumberInput
           label="AUM divisor"

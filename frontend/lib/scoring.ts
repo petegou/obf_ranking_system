@@ -24,6 +24,8 @@ interface ScoringConfig {
 
 type FundRow = Record<string, unknown>;
 
+const MARKET_CAP_SCORE_CAP = 10;
+
 // ---------- Risk metric definitions ----------
 
 const RISK_METRICS: [string, string, string, boolean][] = [
@@ -296,7 +298,9 @@ export async function recalculateAllRankings(asOfDate?: string): Promise<void> {
     const mktScores = funds.map((f) => {
       const aum = num(f.aum);
       const aumInMillions = aum !== null ? aum / 1_000_000 : null;
-      return aumInMillions !== null ? aumInMillions / cfg.market_cap_divisor : 0;
+      return aumInMillions !== null
+        ? Math.min(aumInMillions / cfg.market_cap_divisor, MARKET_CAP_SCORE_CAP)
+        : 0;
     });
 
     const turnScores = funds.map((f) => {
