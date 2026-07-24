@@ -1,5 +1,24 @@
 # Scatter Analytics Experience — Todo
 
+## Active — Toggle category peers in the risk/return scatterplot
+
+- [x] Add an accessible, default-on `Category peers` switch beside the 3Y/5Y chart controls.
+- [x] Hide only the category-peer series when disabled so selected funds remain visible and determine the chart scale.
+- [x] Preserve category median reference lines and the peer table while peers are hidden.
+- [x] Verify typecheck, lint, build, and authenticated chart behavior.
+
+### Verification
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Authenticated browser verification passed on `FI - High Yield` with SIHY and USHY selected:
+  - The default-on switch renders beside the 3Y/5Y controls using the same compact toolbar styling.
+  - Turning peers off removed the category series while preserving selected funds and the peer table.
+  - The 3Y chart rescaled from the HYBX-influenced ~0–230 risk range to the selected funds' ~5–6.2 range.
+  - The peers-off state remained active when switching from 3Y to 5Y.
+- Code review replaced the light-theme `--accent` color with the theme-safe `--brand-primary` token and skipped peer-array construction while peers are hidden.
+
 ## Active — Make fund comparison informational and responsive
 
 - [x] Make the fund detail dock adapt to available viewport width without crushing the rankings grid.

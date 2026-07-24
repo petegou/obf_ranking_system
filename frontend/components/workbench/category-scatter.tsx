@@ -237,6 +237,7 @@ export function CategoryScatterChart({
 }) {
   const isDark = useIsDarkMode();
   const [view, setView] = useState<EfficiencyView>("3yr");
+  const [showCategoryPeers, setShowCategoryPeers] = useState(true);
   const viewConfig = VIEW_CONFIG[view];
   const labelColor = isDark ? "#a3a3a3" : "#737373";
   const gridColor = isDark ? "#374151" : "#d4d4d4";
@@ -275,7 +276,7 @@ export function CategoryScatterChart({
         const bucket = byTicker.get(point.ticker) ?? [];
         bucket.push(point);
         byTicker.set(point.ticker, bucket);
-      } else {
+      } else if (showCategoryPeers) {
         backgroundData.push(point);
       }
     }
@@ -311,23 +312,27 @@ export function CategoryScatterChart({
         enabled: false,
       },
       series: [
-        {
-          type: "scatter",
-          data: backgroundData,
-          xKey: "efficiencyRisk",
-          yKey: "efficiencyReturn",
-          title: "Category funds",
-          fill: bgDot,
-          stroke: bgDotStroke,
-          strokeWidth: 1,
-          size: 6,
-          fillOpacity: isDark ? 0.78 : 0.58,
-          strokeOpacity: isDark ? 0.35 : 0.18,
-          tooltip: {
-            renderer: ({ datum }: { datum: EfficiencyPoint }) =>
-              renderEfficiencyTooltip(datum, bgDot, viewConfig.label),
-          },
-        },
+        ...(showCategoryPeers
+          ? [
+              {
+                type: "scatter" as const,
+                data: backgroundData,
+                xKey: "efficiencyRisk",
+                yKey: "efficiencyReturn",
+                title: "Category funds",
+                fill: bgDot,
+                stroke: bgDotStroke,
+                strokeWidth: 1,
+                size: 6,
+                fillOpacity: isDark ? 0.78 : 0.58,
+                strokeOpacity: isDark ? 0.35 : 0.18,
+                tooltip: {
+                  renderer: ({ datum }: { datum: EfficiencyPoint }) =>
+                    renderEfficiencyTooltip(datum, bgDot, viewConfig.label),
+                },
+              },
+            ]
+          : []),
         ...selectedSeries,
       ],
       axes: {
@@ -383,7 +388,22 @@ export function CategoryScatterChart({
         },
       },
     };
-  }, [points, selectedTickers, selectedSet, isDark, labelColor, gridColor, bgDot, bgDotStroke, selectedStroke, medianColor, categoryMedianRisk, categoryMedianReturn, viewConfig]);
+  }, [
+    points,
+    selectedTickers,
+    selectedSet,
+    showCategoryPeers,
+    isDark,
+    labelColor,
+    gridColor,
+    bgDot,
+    bgDotStroke,
+    selectedStroke,
+    medianColor,
+    categoryMedianRisk,
+    categoryMedianReturn,
+    viewConfig,
+  ]);
 
   const tableRows = useMemo<RiskRewardRow[]>(
     () => {
@@ -470,32 +490,62 @@ export function CategoryScatterChart({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[10px] font-medium uppercase text-[var(--text-tertiary)]">
           Annualized period
         </span>
-        <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-0.5">
-          {(["3yr", "5yr"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => setView(option)}
-              className={`h-7 rounded px-3 text-xs font-medium ${
-                view === option
-                  ? "bg-[var(--surface-card)] text-[var(--text-primary)] shadow-sm"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={showCategoryPeers}
+            onClick={() => setShowCategoryPeers((current) => !current)}
+            className={`inline-flex h-8 items-center gap-2 rounded-md border bg-[var(--surface-muted)] px-2.5 text-[10px] font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--surface-card)] ${
+              showCategoryPeers
+                ? "border-[var(--border-default)] text-[var(--text-primary)]"
+                : "border-[var(--border-subtle)] text-[var(--text-tertiary)]"
+            }`}
+          >
+            <span
+              className={`size-2 rounded-full bg-[var(--text-tertiary)] transition-opacity ${
+                showCategoryPeers ? "opacity-70" : "opacity-30"
+              }`}
+            />
+            <span>Category peers</span>
+            <span
+              aria-hidden="true"
+              className={`relative inline-flex h-3.5 w-6 shrink-0 rounded-full border transition-colors ${
+                showCategoryPeers
+                  ? "border-[var(--brand-primary)] bg-[var(--brand-primary)]"
+                  : "border-[var(--border-default)] bg-[var(--surface-card)]"
               }`}
             >
-              {VIEW_CONFIG[option].label}
-            </button>
-          ))}
+              <span
+                className={`block size-2.5 translate-y-0.5 rounded-full bg-white shadow-sm transition-transform ${
+                  showCategoryPeers ? "translate-x-3" : "translate-x-0.5"
+                }`}
+              />
+            </span>
+          </button>
+          <div className="inline-flex rounded-md border border-[var(--border-subtle)] bg-[var(--surface-muted)] p-0.5">
+            {(["3yr", "5yr"] as const).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setView(option)}
+                className={`h-7 rounded px-3 text-xs font-medium ${
+                  view === option
+                    ? "bg-[var(--surface-card)] text-[var(--text-primary)] shadow-sm"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                }`}
+              >
+                {VIEW_CONFIG[option].label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
       <div className="mb-2 flex min-h-6 flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[var(--text-secondary)]">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-[var(--text-tertiary)] opacity-70" />
-          Category peers
-        </span>
         {selectedPoints.slice(0, 4).map((point) => (
           <span key={point.ticker} className="inline-flex items-center gap-1.5">
             <span
