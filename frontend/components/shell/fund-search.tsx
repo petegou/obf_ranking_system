@@ -90,7 +90,8 @@ export function FundSearch() {
     <div ref={containerRef} className="relative">
       <Input
         type="text"
-        placeholder="Search ticker..."
+        placeholder="Search ticker or fund name..."
+        aria-label="Search by ticker or fund name"
         value={query}
         onChange={(e) => handleQueryChange(e.target.value)}
         onFocus={() => results.length > 0 && setOpen(true)}
@@ -98,7 +99,7 @@ export function FundSearch() {
           if (e.key === "Enter" && results[0]) go(results[0].ticker);
           if (e.key === "Escape") setOpen(false);
         }}
-        className="h-8 w-56 text-sm font-mono"
+        className="h-8 w-64 text-sm"
       />
       {open && results.length > 0 && (
         <div className="absolute right-0 top-9 w-72 max-h-72 overflow-y-auto rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] shadow-sm z-50">

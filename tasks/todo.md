@@ -1,3 +1,24 @@
+# Fund Name Search — Todo
+
+## Active — Search by fund name in addition to ticker
+
+- [x] Match ticker prefixes and case-insensitive fund-name substrings.
+- [x] Prioritize exact ticker, ticker prefix, fund-name prefix, then other name matches.
+- [x] Preserve selected-snapshot filtering, deduplicate results, and cap the response at eight funds.
+- [x] Update the top-bar search prompt and accessibility label.
+- [x] Verify typecheck, lint, build, API behavior, and authenticated browser behavior.
+
+### Verification
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed.
+- `npm run build` passed with the existing multiple-lockfile workspace-root warning.
+- Authenticated browser smoke passed against the 2026-09-29 latest snapshot:
+  - Exact ticker `JEPI` appeared first, followed by `JEPIX`.
+  - Lowercase name substring `equity premium` returned seven matching funds, including JEPI, JEPQ, and PAPI, with no duplicate tickers.
+  - A no-match query and wildcard-only `%`, `_`, and `*` queries returned no results.
+  - On the 2026-04-28 snapshot, selecting JEPI from a fund-name search navigated to `/funds/JEPI?date=2026-04-28`.
+
 # Scatter Analytics Experience — Todo
 
 ## Active — Toggle category peers in the risk/return scatterplot

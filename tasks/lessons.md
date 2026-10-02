@@ -121,6 +121,12 @@ choice from brainstorming. The reviewer didn't have that context.
 
 ## Supabase JS client
 
+### Sanitize user text before building `ilike` patterns.
+PostgREST treats `%`, `_`, and `*` as LIKE wildcards. Backslash-escaping these
+characters did not prevent a wildcard-only fund search from returning arbitrary
+rows, so strip them before adding the application's own prefix/substring
+wildcards and return no results when nothing searchable remains.
+
 ### PostgREST queries cap at 1000 rows by default.
 An unbounded `select()` returns at most 1000 rows silently. For any query
 that *could* return more (`fund_metrics` per-date, `funds`, ranking rows,
